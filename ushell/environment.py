@@ -12,13 +12,6 @@ class Environment(Backend):
     def __init__(self):
         super().__init__()
 
-    def _path_finder(self, path):
-        pwd = [self.pwd(True)]
-        self.cd([path])
-        _path = self.pwd(True)
-        self.cd(pwd)
-        return _path
-
     def _venv(self, path):
         return self.db(path, self.venvName)
 

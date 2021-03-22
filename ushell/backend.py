@@ -5,6 +5,8 @@
 # Project:   ushell
 # ==========================================
 
+__version__ = "1.0.2"
+
 from .ubrainDB import ubrainDB as db
 from .editor import pye
 import machine
@@ -25,6 +27,7 @@ except ImportError:
 
 class Initialize:
     def __init__(self):
+        self.__version__ = __version__
         self.gc = gc
         self.gc.enable()
 
@@ -68,9 +71,13 @@ class Initialize:
             self._networks = self.db(self.ushellDataPath, ".networks")
 
     def welcome_message(self):
-        print("""\n\t    {}Welcome to ushell 
-    A bash like terminal in micropython.{}
-    """.format(self.color[5], self.color[0]))
+        print("""
+        {}==========================================
+                    WELCOME TO USHELL
+                     Version: {}
+                (c) 2021 Shivang Chikani
+        =========================================={}
+        """.format(self.color[5], self.__version__, self.color[0]))
 
     # Progress Bar
     def progress_bar(self, iteration, total, prefix='',
@@ -162,6 +169,13 @@ class Backend(Errors):
         self._undo = "-undo"
         self.__tab_size = "--tab-size"
 
+    def _path_finder(self, path):
+        pwd = [self.pwd(True)]
+        self.cd([path])
+        _path = self.pwd(True)
+        self.cd(pwd)
+        return _path
+
     def clear(self):
         print("\x1b[2J\x1b[H")
 
@@ -224,14 +238,14 @@ class Backend(Errors):
     def rm(self, args):  # Remove file or tree
         for item in args:
             if self.os.stat(item)[0] & 0x4000:  # Dir
-                ifVenv = "/" + item.strip("/")
+                ifVenv = self._path_finder(item)
                 try:
                     if ifVenv == self._envs_data.read(ifVenv):
                         agree = input("{}{}{} is a venv. Do you want to delete it?\n"
                                       "Type y/n: ".format(self.color[5], ifVenv, self.color[0]))
                         if agree.lower() == "y":
                             print("Removing venv: {}"
-                                  .format(self.color[5] + item + self.color[0]))
+                                  .format(self.color[5] + ifVenv + self.color[0]))
                             self._envs_data.remove(ifVenv)
                             self.envPath = self.baseEnvPath
                             raise KeyError
@@ -240,7 +254,10 @@ class Backend(Errors):
                     for f in self.os.ilistdir(item):
                         if f[0] not in ('.', '..'):
                             self.rm(["/".join((item, f[0]))])  # File or Dir
-                    self.os.rmdir(item)
+                    try:
+                        self.os.rmdir(item)
+                    except OSError:
+                        pass
 
             else:  # File
                 self.os.remove(item)

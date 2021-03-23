@@ -5,7 +5,7 @@
 # Project:   ushell
 # ==========================================
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 
 from .ubrainDB import ubrainDB as db
 from .editor import pye
@@ -13,7 +13,6 @@ import machine
 import gc
 import sys
 import os
-
 
 try:
     import network
@@ -24,6 +23,7 @@ try:
     import upip
 except ImportError:
     upip = None
+
 
 class Initialize:
     def __init__(self):
@@ -40,14 +40,14 @@ class Initialize:
 
         # Colors
         self.color = {
-            0: "\u001b[0m",     # "Reset"
+            0: "\u001b[0m",  # "Reset"
             1: "\u001b[37;1m",  # "White"
             2: "\u001b[34;1m",  # "Blue"
             3: "\u001b[32;1m",  # "Green"
-            4: "\u001b[31m",    # "Red"
+            4: "\u001b[31m",  # "Red"
             5: "\u001b[33;1m",  # "Yellow"
             6: "\u001b[36;1m",  # "Cyan"
-            7: "\u001b[35;1m"   # Magenta
+            7: "\u001b[35;1m"  # Magenta
         }
 
         self.db = db
@@ -56,7 +56,6 @@ class Initialize:
 
         try:
             self._commands.read("__ushell__")
-            self.welcome_message()
         except KeyError:
             import ushell.install
 
@@ -103,10 +102,11 @@ class Initialize:
 class Errors(Initialize):
     def __init__(self):
         super().__init__()
+        self.welcome_message()
 
     def non_network_platform(self):
         print(self.color[4] +
-              "Your platform does not have network capabilities"
+              "Your platform does not have network capabilities."
               + self.color[0])
 
     def invalid_file_name(self):
@@ -121,7 +121,7 @@ class Errors(Initialize):
 
     def command_not_found(self, cmd):
         print(self.color[4] +
-              "Command '{}' not found".format(cmd)
+              "Command '{}' not found.".format(cmd)
               + self.color[0])
 
     def not_a_valid_env(self):
@@ -131,20 +131,20 @@ class Errors(Initialize):
               + self.color[0])
 
     def pkg_not_found(self, pkg):
-        print(self.color[4] + \
-              "No record found for package '{}'".format(pkg) \
+        print(self.color[4] +
+              "No record found for package '{}'".format(pkg)
               + self.color[0])
 
     def no_record_for_pkgs(self):
-        print(self.color[4] + \
-              "No record found for package/s." \
+        print(self.color[4] +
+              "No record found for package/s"
               + self.color[0])
 
     def os_error(self, error):
         print(self.color[4] + str(error) + self.color[0])
 
     def import_error(self, module):
-        print(self.color[4] + "ImportError: no module named '{}'" \
+        print(self.color[4] + "ImportError: no module named '{}'"
               .format(module) + self.color[0])
 
     def too_many_args(self):
@@ -158,6 +158,11 @@ class Errors(Initialize):
               "Use 'wifiadd <ssid password>' to add one"
               + self.color[0])
 
+    def network_mentioned_not_found(self, _network):
+        print(self.color[4]
+              + "Network '{}' not found in database"
+              .format(_network) + self.color[0])
+
 
 class Backend(Errors):
     def __init__(self):
@@ -166,8 +171,8 @@ class Backend(Errors):
         self._a = "-a"
         self._lines = "-l"
         self._freeze = ">"
+        self._tab = "-tab"
         self._undo = "-undo"
-        self.__tab_size = "--tab-size"
 
     def _path_finder(self, path):
         pwd = [self.pwd(True)]
@@ -213,7 +218,7 @@ class Backend(Errors):
     def touch(self, args):
 
         for file in args:
-            if file in (self._a or self._r):
+            if file in (self._a, self._r):
                 return self.invalid_file_name()
             with open(file, "w") as f:
                 f.write("")
@@ -310,8 +315,8 @@ class Backend(Errors):
 
         if len(args) > 1:
             if args[-2] == self._lines:
+                lines = int(args[-1])
                 args = args[:-2]
-                lines = args[-1]
 
         for file in args:
             with open(file) as f:
@@ -350,7 +355,16 @@ class Backend(Errors):
         self.cd([pwd])
 
     def editor(self, args):
+        _undo = 50
+        _tab = 4
+        if self._tab in args:
+            _tab = int(args[args.index(self._tab) + 1])
+        if self._undo in args:
+            _undo = int(args[args.index(self._undo) + 1])
+
         if len(args) == 0:
-            self.pye()
+            print("Undo: ", _undo, "Tab: ", _tab)
+            self.pye(undo=_undo, tab_size=_tab)
         else:
-            self.pye(args[0])
+            print("Undo: ", _undo, "Tab: ", _tab)
+            self.pye(args[0], undo=_undo, tab_size=_tab)

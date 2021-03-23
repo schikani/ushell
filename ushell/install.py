@@ -37,9 +37,13 @@ COMMANDS = {
 
     "venvs": "[print(x, end='  ') for x in terminal.venvs()];print('')",
 
-    "wificonnect": "terminal.scan_and_connect()",
+    "wifiscan": "terminal.wifi_scan()",
+
+    "wificonnect": "terminal.scan_and_connect(args)",
 
     "wifiadd": "terminal.add_network(args)",
+
+    "wifiremove": "terminal.remove_network(args)",
 
     "clear": "terminal.clear()",
 

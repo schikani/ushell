@@ -42,35 +42,67 @@ class Environment(Backend):
 
         if self.network:
             self._networks.write(ssid, password)
-            print("Network {} added successfully"
+            print("Network {} added successfully."
                   .format(self.color[6] + ssid + self.color[0]))
 
         else:
             return self.non_network_platform()
 
-    def scan_and_connect(self):
+    def remove_network(self, args):
+        for network in args:
+            try:
+                self._networks.remove(network)
+                print("Network {} removed successfully."
+                      .format(self.color[6] + network + self.color[0]))
+
+            except KeyError:
+                return self.network_mentioned_not_found(network)
+
+    def wifi_scan(self):
+        sta_if = self.network.WLAN(self.network.STA_IF)
+        for netw in sta_if.scan():
+            print(self.color[6]
+                  + netw[0].decode('utf-8')
+                  + self.color[0], end="  ")
+            print("")
+
+    def scan_and_connect(self, args=None):
         if self.network:
             if len(self._networks.keys()) > 0:
                 found = self.color[6] + "{}" + self.color[0]
                 sta_if = self.network.WLAN(self.network.STA_IF)
-                if not sta_if.isconnected():
+                if not sta_if.isconnected() or args:
                     # Get keys and values as bytes objects in a dictionary
                     dict_B = self._networks.items()
-
-                    print('connecting to network...')
                     sta_if.active(True)
+                    if not args:
+                        print('Scanning for available networks ...')
+                        for netw in sta_if.scan():
+                            # catch ssid from index 0 and
+                            # compare it with the dictionary keys
+                            if netw[0] in dict_B.keys():
+                                found = found.format(netw[0].decode('utf-8'))
+                                print("found: {}".format(found))
+                                sta_if.connect(netw[0], dict_B[netw[0]])
+                                break
 
-                    for netw in sta_if.scan():
-                        # catch ssid from index 0 and
-                        # compare it with the dictionary keys
-                        if netw[0] in dict_B.keys():
-                            found = found.format(netw[0].decode('utf-8'))
-                            print("found: {}".format(found))
-                            sta_if.connect(netw[0], dict_B[netw[0]])
+                    else:
+                        sta_if.active(False)
+                        sta_if.active(True)
+                        ssid = args[0]
+                        ssid_B = ssid.encode()
+                        if ssid_B in dict_B.keys():
+                            found = found.format(ssid)
+                            print('Connecting to network: {}'.format(found))
+                            sta_if.connect(ssid_B, dict_B[ssid_B])
+
+                        else:
+                            return self.network_mentioned_not_found(ssid)
 
                     while not sta_if.isconnected():
                         pass
                     print('network config:', sta_if.ifconfig())
+
                 else:
                     print("network config:", end=" "), self.ifconfig()
             else:
@@ -118,7 +150,7 @@ class Environment(Backend):
             package = args[1:]
             symbol = None
 
-            if package[0] in (self._r or self._freeze):
+            if package[0] in (self._r, self._freeze):
                 symbol = package[0]
                 package = package[1:]
 

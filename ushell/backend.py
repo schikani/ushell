@@ -349,8 +349,12 @@ class Backend(Errors):
                 del self.sys.modules[module]  # To be able to re-import
 
             except ImportError:
-
                 self.import_error(module)
+
+            except Exception as e:
+                print(self.color[4]
+                      + str(e) +
+                      self.color[0])
 
         self.cd([pwd])
 

@@ -60,6 +60,7 @@ class Environment(Backend):
 
     def wifi_scan(self):
         sta_if = self.network.WLAN(self.network.STA_IF)
+        sta_if.active(True)
         for netw in sta_if.scan():
             print(self.color[6]
                   + netw[0].decode('utf-8')

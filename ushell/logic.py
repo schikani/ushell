@@ -18,7 +18,6 @@ class Logic(Environment):
             return
 
         global args
-        cmd = ""
 
         _inp = inp
 

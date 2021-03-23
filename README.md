@@ -1,5 +1,5 @@
 # ushell
-### ushell is simple yet powerful Bash like terminal for devices running MicroPython
+### ushell is simple yet powerful Bash like terminal with an editor for devices running MicroPython
 
 ## Commands
 ```

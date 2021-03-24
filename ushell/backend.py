@@ -5,7 +5,7 @@
 # Project:   ushell
 # ==========================================
 
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 
 from .ubrainDB import ubrainDB as db
 from .editor import pye
@@ -40,14 +40,14 @@ class Initialize:
 
         # Colors
         self.color = {
-            0: "\u001b[0m",  # "Reset"
+            0: "\u001b[0m",     # "Reset"
             1: "\u001b[37;1m",  # "White"
             2: "\u001b[34;1m",  # "Blue"
             3: "\u001b[32;1m",  # "Green"
-            4: "\u001b[31m",  # "Red"
+            4: "\u001b[31m",    # "Red"
             5: "\u001b[33;1m",  # "Yellow"
             6: "\u001b[36;1m",  # "Cyan"
-            7: "\u001b[35;1m"  # Magenta
+            7: "\u001b[35;1m"   # Magenta
         }
 
         self.db = db
@@ -367,8 +367,6 @@ class Backend(Errors):
             _undo = int(args[args.index(self._undo) + 1])
 
         if len(args) == 0:
-            print("Undo: ", _undo, "Tab: ", _tab)
             self.pye(undo=_undo, tab_size=_tab)
         else:
-            print("Undo: ", _undo, "Tab: ", _tab)
             self.pye(args[0], undo=_undo, tab_size=_tab)

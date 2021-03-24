@@ -49,23 +49,29 @@ class Environment(Backend):
             return self.non_network_platform()
 
     def remove_network(self, args):
-        for network in args:
-            try:
-                self._networks.remove(network)
-                print("Network {} removed successfully."
-                      .format(self.color[6] + network + self.color[0]))
+        if self.network:
+            for network in args:
+                try:
+                    self._networks.remove(network)
+                    print("Network {} removed successfully."
+                        .format(self.color[6] + network + self.color[0]))
 
-            except KeyError:
-                return self.network_mentioned_not_found(network)
+                except KeyError:
+                    return self.network_mentioned_not_found(network)
+        else:
+            return self.non_network_platform()
 
     def wifi_scan(self):
-        sta_if = self.network.WLAN(self.network.STA_IF)
-        sta_if.active(True)
-        for netw in sta_if.scan():
-            print(self.color[6]
-                  + netw[0].decode('utf-8')
-                  + self.color[0], end="  ")
-            print("")
+        if self.network:
+            sta_if = self.network.WLAN(self.network.STA_IF)
+            sta_if.active(True)
+            for netw in sta_if.scan():
+                print(self.color[6]
+                    + netw[0].decode('utf-8')
+                    + self.color[0], end="  ")
+                print("")
+        else:
+            return self.non_network_platform()
 
     def scan_and_connect(self, args=None):
         if self.network:
@@ -86,7 +92,8 @@ class Environment(Backend):
                                 print("found: {}".format(found))
                                 sta_if.connect(netw[0], dict_B[netw[0]])
                                 break
-
+                            else:
+                                return self.no_networks_in_database()
                     else:
                         sta_if.active(False)
                         sta_if.active(True)
@@ -96,10 +103,8 @@ class Environment(Backend):
                             found = found.format(ssid)
                             print('Connecting to network: {}'.format(found))
                             sta_if.connect(ssid_B, dict_B[ssid_B])
-
                         else:
                             return self.network_mentioned_not_found(ssid)
-
                     while not sta_if.isconnected():
                         pass
                     print('network config:', sta_if.ifconfig())
@@ -108,11 +113,16 @@ class Environment(Backend):
                     print("network config:", end=" "), self.ifconfig()
             else:
                 return self.no_networks_in_database()
+        else:
+            return self.non_network_platform()
 
     def networks(self):
-        networks = self._networks.keys()
-        networks = [self.color[6] + net + self.color[0] for net in networks]
-        return networks
+        if self.network:
+            networks = self._networks.keys()
+            networks = [self.color[6] + net + self.color[0] for net in networks]
+            return networks
+        else:
+            return self.non_network_platform()
 
     def venvs(self):
         envs = self._envs_data.keys()

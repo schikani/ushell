@@ -11,6 +11,29 @@ from .environment import Environment
 class Logic(Environment):
     def __init__(self):
         super().__init__()
+    
+    def __quotes_parser(self, args):
+        new_args = []
+        _a = ""
+        for a in args:
+            if a.startswith('"') and not a.endswith('"'):
+                a = a[1:]
+                _a += a + " "
+
+            elif not a.startswith('"') and a.endswith('"'):
+                a = a[:-1]
+                _a += a
+                new_args.append(_a)
+                _a = ""
+            
+            elif a.startswith('"') and a.endswith('"'):
+                a = a[1:-1]
+                new_args.append(a)
+
+            else:
+                new_args.append(a)
+    
+        return new_args
 
     def tokenizer(self, inp):
 
@@ -26,13 +49,13 @@ class Logic(Environment):
 
             for i in _inp:
                 cmd = i[0]
-                args = i[1:]
+                args = self.__quotes_parser(i[1:])
                 self.execute(cmd)
 
         else:  # single command
             _inp = _inp.split()
             cmd = _inp[0]
-            args = _inp[1:]
+            args = self.__quotes_parser(_inp[1:])
             self.execute(cmd)
 
     def execute(self, cmd):

@@ -9,10 +9,20 @@ from .logic import Logic
 
 
 class Terminal(Logic):
-    def __init__(self, username):
+    def __init__(self, username=None):
         super().__init__()
         self.prompt = "({0}){1}{2}@{3}{4}:{5}{6}{7}${8} "
-        self.username = username
+        if username:
+            self.username = username
+            self.user.write("user", self.username)
+        else:
+            if "user" in self.user.keys():
+                self.username = self.user.read("user")
+            
+            else:
+                self.username = input("Enter username for terminal: ")
+                self.user.write("user", self.username)
+
 
     def whoami(self, get=False):
         if get:

@@ -5,7 +5,7 @@
 # Project:   ushell
 # ==========================================
 
-__version__ = "1.0.4"
+__version__ = "1.0.5"
 
 from .ubrainDB import ubrainDB as db
 from .editor import pye
@@ -53,6 +53,7 @@ class Initialize:
         self.db = db
         self.ushellDataPath = "/.ushellData"
         self._commands = self.db(self.ushellDataPath, "commands")
+        self.user = self.db(self.ushellDataPath, ".user")
 
         try:
             self._commands.read("__ushell__")

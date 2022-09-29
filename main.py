@@ -4,7 +4,5 @@ from ushell.terminal import Terminal
 # NOTE: If you change the variable 'terminal', 
 #	then you will also need to change all the occurrence of 'terminal' in install.py
 
-terminal = Terminal('username')  # Enter the username for terminal prefix
 
-
-
+terminal = Terminal()  # Enter the username for terminal prefix

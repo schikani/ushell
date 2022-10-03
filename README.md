@@ -7,9 +7,9 @@ pwd, cd, cp, head, cat
 touch, ls, whoami, networks,
 mv, rm, mkdir, venvs, run,  
 mkenv, activate, deactivate, 
-wificonnect, wifiadd, clear,
-ifconfig, platform, repl,
-upip, write, reboot
-
+wificonnect, wifiadd, wifiremove,
+wifiscan, clear, ifconfig, platform, 
+repl, upip, write, users, useradd,
+userdel, login, logout, reboot
 ```
 

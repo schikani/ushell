@@ -1,6 +1,6 @@
 # ==========================================
 # Copyright (c) 2021 Shivang Chikani
-# Email:     mail@shivangchikani.com
+# Email:     shivangchikani1@gmail.com
 # Date:      7 March 2021
 # Project:   ushell
 # ==========================================
@@ -24,19 +24,13 @@ try:
 except ImportError:
     upip = None
 
+USERS_DIR = "/.USERS"
+ROOT_USERNAME = "root"
+ROOT_PASSWORD = "MicroPython"
 
-class Initialize:
+class Users:
     def __init__(self):
         self.__version__ = __version__
-        self.gc = gc
-        self.gc.enable()
-
-        self.machine = machine
-        self.sys = sys
-        self.os = os
-        self.pye = pye
-        self.network = network
-        self.upip = upip
 
         # Colors
         self.color = {
@@ -50,34 +44,210 @@ class Initialize:
             7: "\u001b[35;1m"   # Magenta
         }
 
+        if ".USERS" not in os.listdir("/"):
+            os.mkdir(USERS_DIR)
+
         self.db = db
+        self.network = network
         self.ushellDataPath = "/.ushellData"
-        self._commands = self.db(self.ushellDataPath, "commands")
-        self.user = self.db(self.ushellDataPath, ".user")
+        self._commands = self.db(self.ushellDataPath, ".commands")
+        self.users = self.db(self.ushellDataPath, ".users")
 
-        try:
-            self._commands.read("__ushell__")
-        except KeyError:
-            import ushell.install
+        if ROOT_USERNAME not in self.users.keys():
+            self.users.write(ROOT_USERNAME, ROOT_PASSWORD)
 
-        self.baseEnvPath = "/lib"
-        self.envPath = self.baseEnvPath
-        self.venvName = ".venv"
+        self.root_access = False
+        self.username = ""
+        self.userPath = ""
+        self.baseEnvPath = ""
+        self.envPath = ""
+        self.venvName = ""
+        self._envs_data = ""
+        self._networks = ""
 
-        self._envs_data = self.db(self.ushellDataPath, "virtualEnvs")
-        self._envs_data.write(self.baseEnvPath, self.baseEnvPath)
-
-        if self.network:
-            self._networks = self.db(self.ushellDataPath, ".networks")
+        # self.updateuser()
 
     def welcome_message(self):
         print("""
         {}==========================================
                     WELCOME TO USHELL
-                     Version: {}
+                        Version: {}
                 (c) 2021 Shivang Chikani
         =========================================={}
         """.format(self.color[5], self.__version__, self.color[0]))
+
+    def username_password(self, username, password, _inplace=True, _print=True):
+        if ROOT_USERNAME not in self.users.keys():
+            self.users.write(ROOT_USERNAME, ROOT_PASSWORD)
+
+        while True:
+            if username:
+                if username in self.users.keys():
+                    if not password:
+                        print("Enter password for '{}': ".format(username), end="")
+                        password = sys.stdin.readline().strip("\n")
+
+                    if password == self.users.read(username):
+                        if _print:
+                            print("Login successful!")
+
+                    else:
+                        if _print:
+                            print("Incorect password!")
+                        raise NameError
+
+                else:
+                    if _print:
+                        print("No user found named '{}'".format(username))
+                        raise NameError
+
+                break
+
+            else:
+                username = input("Enter ushell username: ")
+                continue
+
+        if _inplace:
+            self.username = username
+
+        return username, password
+
+    
+    def no_permission(self):
+        print(self.color[4] +
+            "The user does not have the permission to do the action"
+            + self.color[0])
+
+    def user_list(self):
+        for user in self.users.keys():
+            print(self.color[3] + user + self.color[0])
+
+    def updateuser(self, chdir=True):
+        if self.username != ROOT_USERNAME:
+            if self.username not in os.listdir(USERS_DIR):
+                os.mkdir(USERS_DIR+"/"+self.username)
+
+        if self.username != ROOT_USERNAME:
+            self.root_access = False
+            self.userPath = "{}/{}".format(USERS_DIR, self.username)
+            self.baseEnvPath = "{}/lib".format(self.userPath)
+        else:
+            self.root_access = True
+            self.userPath = "/"
+            self.baseEnvPath = "/lib"
+        
+        if "lib" not in os.listdir(self.userPath):
+            os.mkdir(self.baseEnvPath)
+
+        self.envPath = self.baseEnvPath
+        self.venvName = ".venv"
+
+        self._envs_data = self.db(self.userPath, ".virtualEnvs")
+        self._envs_data.write(self.baseEnvPath, self.baseEnvPath)
+
+        if self.network:
+            self._networks = self.db(self.userPath, ".networks")
+        
+        if chdir:
+            os.chdir(self.userPath) 
+        
+    def useradd(self, args):
+        if self.root_access:
+            username = args[0]
+            print("Enter password for new profile" + self.color[2] + " {}".format(username) + self.color[0])
+            password = sys.stdin.readline().strip("\n")
+            self.users.write(username, password)
+            os.mkdir(USERS_DIR+"/"+username)
+            print("Profile" + self.color[2] + " {} ".format(username) + self.color[0] + "created!")
+            self.updateuser(chdir=False)
+        else:
+            self.no_permission()
+    
+    def userdel(self, args):
+        if self.root_access and args[0] != ROOT_USERNAME:
+            username = args[0]
+            if username in self.users.keys():
+                # print("Enter password to delete profile" + self.color[2] + " {}".format(username) + self.color[0])
+                # password = sys.stdin.readline().strip("\n")
+                if self.username_password(username, None, _inplace=False):
+                    self.users.remove(username)
+                    self.rm([USERS_DIR+"/"+username, "-y"])
+                    print("User {} deleted successfully!".format(username))
+                    # if username == self.username:
+                    #     self.username_password(ROOT_USERNAME, None, self.users)
+                    #     self.updateuser()
+                else:
+                    print("Incorrect password!")
+            else:
+                print("No user named" + self.color[2] + " {} ".format(username) + self.color[0] + "found in records!")
+        else:
+            self.no_permission()
+
+    def login(self, args):
+        username = args[0]
+        self.username_password(username, None)
+        self.updateuser()
+
+    def logout(self):
+        self.username_password(None, None)
+        self.updateuser()
+    
+    def rm(self, args):  # Remove file or tree
+        agree = False
+        if args[-1] == "-y":
+            args = args[:-1]
+            agree = True
+
+        for item in args:
+            if self.os.stat(item)[0] & 0x4000:  # Dir
+                ifVenv = self._path_finder(item)
+                try:
+                    if ifVenv == self._envs_data.read(ifVenv):
+                        if not agree:
+                            agree = input("{}{}{} is a venv. Do you want to delete it?\n"
+                                        "Type y/n: ".format(self.color[5], ifVenv, self.color[0]))
+
+                            if agree.lower() == "y":
+                                agree = True
+                            else:
+                                agree = False
+
+                        if agree:
+                            print("Removing venv: {}"
+                                  .format(self.color[5] + ifVenv + self.color[0]))
+                            self._envs_data.remove(ifVenv)
+                            self.envPath = self.baseEnvPath
+                            raise KeyError
+
+                except KeyError:
+                    for f in self.os.ilistdir(item):
+                        if f[0] not in ('.', '..'):
+                            self.rm(["/".join((item, f[0]))])  # File or Dir
+                    try:
+                        self.os.rmdir(item)
+                    except OSError:
+                        pass
+
+            else:  # File
+                self.os.remove(item)
+
+class Initialize(Users):
+    def __init__(self):
+        super().__init__()
+        self.gc = gc
+        self.gc.enable()
+
+        self.machine = machine
+        self.sys = sys
+        self.os = os
+        self.pye = pye
+        self.upip = upip
+
+        try:
+            self._commands.read("__ushell__")
+        except KeyError:
+            import ushell.install
+        
 
     # Progress Bar
     def progress_bar(self, iteration, total, prefix='',
@@ -103,7 +273,7 @@ class Initialize:
 class Errors(Initialize):
     def __init__(self):
         super().__init__()
-        self.welcome_message()
+
 
     def non_network_platform(self):
         print(self.color[4] +
@@ -145,8 +315,9 @@ class Errors(Initialize):
         print(self.color[4] + str(error) + self.color[0])
 
     def import_error(self, module):
-        print(self.color[4] + "ImportError: no module named '{}'"
-              .format(module) + self.color[0])
+        for m in module:
+            print(self.color[4] + "{}"
+                .format(m) + self.color[0])
 
     def too_many_args(self):
         print(self.color[4] +
@@ -241,32 +412,6 @@ class Backend(Errors):
                     with open("/".join((loc, i)), "w+b") as fw:
                         fw.write(fr.read())
 
-    def rm(self, args):  # Remove file or tree
-        for item in args:
-            if self.os.stat(item)[0] & 0x4000:  # Dir
-                ifVenv = self._path_finder(item)
-                try:
-                    if ifVenv == self._envs_data.read(ifVenv):
-                        agree = input("{}{}{} is a venv. Do you want to delete it?\n"
-                                      "Type y/n: ".format(self.color[5], ifVenv, self.color[0]))
-                        if agree.lower() == "y":
-                            print("Removing venv: {}"
-                                  .format(self.color[5] + ifVenv + self.color[0]))
-                            self._envs_data.remove(ifVenv)
-                            self.envPath = self.baseEnvPath
-                            raise KeyError
-
-                except KeyError:
-                    for f in self.os.ilistdir(item):
-                        if f[0] not in ('.', '..'):
-                            self.rm(["/".join((item, f[0]))])  # File or Dir
-                    try:
-                        self.os.rmdir(item)
-                    except OSError:
-                        pass
-
-            else:  # File
-                self.os.remove(item)
 
     def ls(self, args, helper=False):
 
@@ -341,16 +486,17 @@ class Backend(Errors):
         raise EOFError
 
     def run(self, args):
+        # print(self.envPath)
         pwd = self.pwd(True)
         self.cd([self.envPath])
         for module in args:
-
+            # print(module)
             try:
                 __import__(module)
                 del self.sys.modules[module]  # To be able to re-import
 
-            except ImportError:
-                self.import_error(module)
+            except ImportError as i:
+                self.import_error([i])
 
             except Exception as e:
                 print(self.color[4]

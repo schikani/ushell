@@ -6,3 +6,4 @@ from ushell.terminal import Terminal
 
 
 terminal = Terminal()  # Enter the username for terminal prefix
+terminal._prompt()  # Get the terminal prompt

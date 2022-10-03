@@ -1,6 +1,6 @@
 # ==========================================
 # Copyright (c) 2021 Shivang Chikani
-# Email:     mail@shivangchikani.com
+# Email:     shivangchikani1@gmail.com
 # Date:      7 March 2021
 # Project:   ushell
 # ==========================================

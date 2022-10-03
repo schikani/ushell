@@ -1,6 +1,6 @@
 # ==========================================
 # Copyright (c) 2021 Shivang Chikani
-# Email:     mail@shivangchikani.com
+# Email:     shivangchikani1@gmail.com
 # Date:      7 March 2021
 # Project:   ushell
 # ==========================================
@@ -69,8 +69,22 @@ COMMANDS = {
     "upip": "terminal.upip_manager(args)",
 
     # Micropython-Editor
-    "write": "terminal.editor(args)"
+    "write": "terminal.editor(args)",
 
+    # Users
+    "users": "terminal.user_list()",
+
+    # Add user
+    "useradd": "terminal.useradd(args)",
+
+    # Delete user
+    "userdel": "terminal.userdel(args)",
+
+    # Login
+    "login": "terminal.login(args)",
+    
+    # Logout
+    "logout": "terminal.logout()",
 }
 
 

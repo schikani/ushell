@@ -1,12 +1,12 @@
 # ==========================================
 # Copyright (c) 2021 Shivang Chikani
-# Email:     mail@shivangchikani.com
+# Email:     shivangchikani1@gmail.com
 # Date:      7 March 2021
 # Project:   ushell
 # ==========================================
-
+    
 from .backend import Backend
-
+import sys
 
 class Environment(Backend):
     def __init__(self):
@@ -38,7 +38,9 @@ class Environment(Backend):
 
     def add_network(self, args):
         ssid = args[0]
-        password = args[1]
+        # password = args[1]
+        print("Enter password for network " + self.color[2] + "{}".format(ssid) + self.color[0])
+        password = sys.stdin.readline().strip("\n")
 
         if self.network:
             self._networks.write(ssid, password)
@@ -119,14 +121,14 @@ class Environment(Backend):
     def networks(self):
         if self.network:
             networks = self._networks.keys()
-            networks = [self.color[6] + net + self.color[0] for net in networks]
+            networks = ['"'+self.color[6] + net + self.color[0]+'"' for net in networks]
             return networks
         else:
             return self.non_network_platform()
 
     def venvs(self):
         envs = self._envs_data.keys()
-        envs = [self.color[5] + venv + self.color[0] for venv in envs]
+        envs = ['"'+self.color[5] + venv + self.color[0]+'"' for venv in envs]
         return envs
 
     def mkenv(self, args):

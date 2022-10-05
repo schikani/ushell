@@ -37,7 +37,7 @@ class Logic(Environment):
 
     def tokenizer(self, inp):
 
-        if inp == "":
+        if inp == "" or inp.startswith("#") or inp == " ":
             return
 
         global args

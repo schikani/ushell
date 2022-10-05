@@ -6,8 +6,8 @@
 # ==========================================
     
 from .backend import Backend
-import sys
-import os
+import ntptime
+
 
 class Environment(Backend):
     def __init__(self):
@@ -19,7 +19,6 @@ class Environment(Backend):
     def _upip_install_helper(self, package_dict, package, envPath=None):
         if not envPath:
             envPath = self.envPath
-
         _contents_before = set(self.ls([envPath], helper=True))
         self.upip.install(package, envPath)
         _contents_after = set(self.ls([envPath], helper=True))
@@ -43,7 +42,7 @@ class Environment(Backend):
         ssid = args[0]
         # password = args[1]
         print("Enter password for network " + self.color[2] + "{}".format(ssid) + self.color[0])
-        password = sys.stdin.readline().strip("\n")
+        password = self.sys.stdin.readline().strip("\n")
 
         if self.network:
             self._networks.write(ssid, password)
@@ -112,9 +111,11 @@ class Environment(Backend):
                             return self.network_mentioned_not_found(ssid)
                     while not sta_if.isconnected():
                         pass
+                    ntptime.settime()
                     print('network config:', sta_if.ifconfig())
 
                 else:
+                    ntptime.settime()
                     print("network config:", end=" "), self.ifconfig()
             else:
                 return self.no_networks_in_database()

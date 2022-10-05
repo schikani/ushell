@@ -11,6 +11,7 @@ from .logic import Logic
 class Terminal(Logic):
     def __init__(self, username=None, password=None):
         super().__init__()
+        self.clear()
         self.welcome_message()
         if self.username_password(username, password, self.users):
             self.updateuser()
@@ -22,7 +23,19 @@ class Terminal(Logic):
         else:
             print(self.username)
     
+    def _pre_prompt_script(self):
+
+        if ".ushellrc" not in self.os.listdir("/"):
+            self.touch([self.ushellrcFile])
+
+        with open(self.ushellrcFile, "r") as ushellrc:
+            for line in ushellrc:
+                self.tokenizer(line.strip("\n"))
+    
     def _prompt(self):
+
+        self._pre_prompt_script()
+
         while True:
             env_path = self.envPath
             pwd = self.pwd(True)

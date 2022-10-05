@@ -85,6 +85,15 @@ COMMANDS = {
     
     # Logout
     "logout": "terminal.logout()",
+
+    # Ftp
+    "ftp": "terminal.ftp(args)",
+
+    # Set-time-zone
+    # Example tz +5:30
+    "tz": "terminal.set_time_zone(args)",
+
+    "date": "terminal.date(args)"
 }
 
 

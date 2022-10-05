@@ -9,7 +9,9 @@ __version__ = "1.0.5"
 
 from .ubrainDB import ubrainDB as db
 from .ram_block_dev import RAMBlockDev
+from .uftpd import start, stop, restart
 from .editor import pye
+import time
 import machine
 import gc
 import sys
@@ -55,6 +57,7 @@ class Users:
         self.db = db
         self.network = network
         self.ushellDataPath = "/.ushellData"
+        self.ushellrcFile = "/.ushellrc"
         self._commands = self.db(self.ushellDataPath, ".commands")
         self.users = self.db(self.ushellDataPath, ".users")
 
@@ -69,6 +72,7 @@ class Users:
         self.venvName = ""
         self._envs_data = ""
         self._networks = ""
+        self._user_data = ""
 
         # self.updateuser()
 
@@ -76,7 +80,7 @@ class Users:
         print("""
         {}==========================================
                     WELCOME TO USHELL
-                        Version: {}
+                    Version: {}
                 (c) 2021 Shivang Chikani
         =========================================={}
         """.format(self.color[5], self.__version__, self.color[0]))
@@ -153,6 +157,8 @@ class Users:
 
         self._envs_data = self.db(self.userPath, ".virtualEnvs")
         self._envs_data.write(self.baseEnvPath, self.baseEnvPath)
+
+        self._user_data = self.db(self.userPath, ".data")
 
         if self.network:
             self._networks = self.db(self.userPath, ".networks")
@@ -528,3 +534,36 @@ class Backend(Errors):
             self.pye(undo=_undo, tab_size=_tab)
         else:
             self.pye(args[0], undo=_undo, tab_size=_tab)
+    
+    def ftp(self, args):
+        if args[0] == "start":
+            start()
+        elif args[0] == "stop":
+            stop()
+        elif args[0] == "restart":
+            restart()
+
+    def set_time_zone(self, args):
+        # Example tz +5:30
+        _time_zone = args[0]
+
+        hour, minutes = _time_zone.split(":")
+        hour = int(hour)
+        minutes = int(minutes)
+
+        tz_offset = (hour * 3600) + (minutes * 60)
+
+        self._user_data.write("TZ_OFFSET", tz_offset)
+    
+    def date(self, args):
+
+        wd = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+        if "TZ_OFFSET" in self._user_data.keys():
+            tz_offset = self._user_data.read("TZ_OFFSET")
+        else:
+            tz_offset = 0
+        
+        year, month, month_day, hour, min, second, weekday, year_day = time.localtime(time.time() + tz_offset)
+        self.sys.stdout.write("{} {}  {} {:02d}:{:02d}:{:02d} {}\n".format(wd[weekday], months[month-1], month_day, hour, min, second, year))

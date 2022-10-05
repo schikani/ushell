@@ -27,9 +27,9 @@ class Terminal(Logic):
             env_path = self.envPath
             pwd = self.pwd(True)
 
-            if env_path.startswith(self.userPath):
+            if env_path.startswith(self.userPath) and env_path != self.RAM_BLOCK_DIR_PATH+"/lib":
                 env_path = env_path[env_path.index(self.userPath)+len(self.userPath):]
-            if pwd.startswith(self.userPath):
+            if pwd.startswith(self.userPath) and not pwd.startswith(self.RAM_BLOCK_DIR_PATH):
                 pwd = pwd[pwd.index(self.userPath)+len(self.userPath):]
 
             try:

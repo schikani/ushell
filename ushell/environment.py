@@ -7,6 +7,7 @@
     
 from .backend import Backend
 import sys
+import os
 
 class Environment(Backend):
     def __init__(self):
@@ -15,11 +16,13 @@ class Environment(Backend):
     def _venv(self, path):
         return self.db(path, self.venvName)
 
-    def _upip_install_helper(self, package_dict, package):
+    def _upip_install_helper(self, package_dict, package, envPath=None):
+        if not envPath:
+            envPath = self.envPath
 
-        _contents_before = set(self.ls([self.envPath], helper=True))
-        self.upip.install(package, self.envPath)
-        _contents_after = set(self.ls([self.envPath], helper=True))
+        _contents_before = set(self.ls([envPath], helper=True))
+        self.upip.install(package, envPath)
+        _contents_after = set(self.ls([envPath], helper=True))
         _package_files = list(_contents_before.symmetric_difference(_contents_after))
 
         if len(_package_files) > 0:
@@ -157,6 +160,10 @@ class Environment(Backend):
     def upip_manager(self, args):
 
         if self.upip:
+            ramdisk = True if args[-1] == "--ramdisk" else False
+            if ramdisk:
+                self.envPath = self.RAM_BLOCK_DIR_PATH+"/lib"
+                args = args[:-1]
 
             venv = self._venv(self.envPath)
             action = args[0]

@@ -8,6 +8,7 @@
 __version__ = "1.0.5"
 
 from .ubrainDB import ubrainDB as db
+from .ram_block_dev import RAMBlockDev
 from .editor import pye
 import machine
 import gc
@@ -28,10 +29,14 @@ USERS_DIR = "/.USERS"
 ROOT_USERNAME = "root"
 ROOT_PASSWORD = "MicroPython"
 
+
 class Users:
+    RAM_BLOCK_DIR_PATH = "/.ramdisk"
+    RAM_BLOCK_SIZE = 512 
+    RAM_BLOCK_NO = 50
+
     def __init__(self):
         self.__version__ = __version__
-
         # Colors
         self.color = {
             0: "\u001b[0m",     # "Reset"
@@ -123,6 +128,10 @@ class Users:
             print(self.color[3] + user + self.color[0])
 
     def updateuser(self, chdir=True):
+        cbdev = RAMBlockDev(512, 50)
+        os.VfsLfs2.mkfs(cbdev)
+        os.mount(cbdev, '{}'.format(self.RAM_BLOCK_DIR_PATH))
+
         if self.username != ROOT_USERNAME:
             if self.username not in os.listdir(USERS_DIR):
                 os.mkdir(USERS_DIR+"/"+self.username)
@@ -184,11 +193,13 @@ class Users:
             self.no_permission()
 
     def login(self, args):
+        os.umount("{}".format(self.RAM_BLOCK_DIR_PATH))
         username = args[0]
         self.username_password(username, None)
         self.updateuser()
 
     def logout(self):
+        os.umount("{}".format(self.RAM_BLOCK_DIR_PATH))
         self.username_password(None, None)
         self.updateuser()
     

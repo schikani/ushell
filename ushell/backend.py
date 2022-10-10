@@ -5,7 +5,7 @@
 # Project:   ushell
 # ==========================================
 
-__version__ = "1.0.5"
+__version__ = "1.1.0"
 
 from .ubrainDB import ubrainDB as db
 from .ram_block_dev import RAMBlockDev
@@ -81,7 +81,7 @@ class Users:
         {}==========================================
                     WELCOME TO USHELL
                     Version: {}
-                (c) 2021 Shivang Chikani
+                (c) 2022 Shivang Chikani
         =========================================={}
         """.format(self.color[5], self.__version__, self.color[0]))
 

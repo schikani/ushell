@@ -93,7 +93,14 @@ COMMANDS = {
     # Example tz +5:30
     "tz": "terminal.set_time_zone(args)",
 
-    "date": "terminal.date(args)"
+    # Get current date
+    "date": "terminal.date(args)",
+
+    # Echo
+    "echo": "terminal.echo(args)",
+
+    # Ushell (run)
+    "ushell": "terminal._ushell(args)"
 }
 
 

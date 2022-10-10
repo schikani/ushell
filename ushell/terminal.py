@@ -15,6 +15,7 @@ class Terminal(Logic):
         self.welcome_message()
         if self.username_password(username, password, self.users):
             self.updateuser()
+            self.clear()
             self.prompt = "({0}){1}{2}@{3}{4}:{5}{6}{7}${8} "
 
     def whoami(self, get=False):
@@ -23,18 +24,28 @@ class Terminal(Logic):
         else:
             print(self.username)
     
+    def login(self, args):
+        self.os.umount("{}".format(self.RAM_BLOCK_DIR_PATH))
+        username = args[0]
+        self.username_password(username, None)
+        self.updateuser()
+        self._pre_prompt_script()
+
+    def logout(self):
+        self.os.umount("{}".format(self.RAM_BLOCK_DIR_PATH))
+        self.username_password(None, None)
+        self.updateuser()
+        self._pre_prompt_script()
+
+    
     def _pre_prompt_script(self):
 
-        if ".ushellrc" not in self.os.listdir("/"):
-            self.touch([self.ushellrcFile])
-
-        with open(self.ushellrcFile, "r") as ushellrc:
-            for line in ushellrc:
-                self.tokenizer(line.strip("\n"))
+        self._ushell(["run", self.dotUshellDirPath])
     
-    def _prompt(self):
+    def _prompt(self, run_pre_prompt_script=False):
 
-        self._pre_prompt_script()
+        if run_pre_prompt_script:
+            self._pre_prompt_script()
 
         while True:
             env_path = self.envPath
@@ -71,6 +82,32 @@ class Terminal(Logic):
 
             except EOFError:
                 break
+    
+    def _ushell(self, args):
+
+        ushell_cmd = args[0]
+        ushell_args = args[1:]
+
+        if ushell_cmd == "run":
+            for arg in ushell_args:
+                if self.os.stat(arg)[0] & 0x4000: #Dir
+                    self.__prev_dirs.append(self.pwd(True))
+                    self.cd([arg])
+                    dir_files = self.os.listdir()
+                    main_file = "main.ush"
+                    if not main_file in dir_files:
+                        self.touch(main_file)
+                    self._ushell(["run", main_file])
+
+                else:
+                    with open(arg, "r") as ushell_file:
+                        for line in ushell_file:
+                            self.tokenizer(line)
+
+            if len(self.__prev_dirs):
+                self.cd([self.__prev_dirs[0]])
+                self.__prev_dirs.clear()
+            
 
     def __repr__(self):
         self.__call__()

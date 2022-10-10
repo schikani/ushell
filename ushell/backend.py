@@ -57,7 +57,6 @@ class Users:
         self.db = db
         self.network = network
         self.ushellDataPath = "/.ushellData"
-        self.ushellrcFile = "/.ushellrc"
         self._commands = self.db(self.ushellDataPath, ".commands")
         self.users = self.db(self.ushellDataPath, ".users")
 
@@ -73,8 +72,9 @@ class Users:
         self._envs_data = ""
         self._networks = ""
         self._user_data = ""
-
-        # self.updateuser()
+        self._user_vars = dict()
+        self.dotUshellDirPath = ""
+        self.__prev_dirs = []
 
     def welcome_message(self):
         print("""
@@ -99,6 +99,8 @@ class Users:
                     if password == self.users.read(username):
                         if _print:
                             print("Login successful!")
+                            # time.sleep(0.5)
+
 
                     else:
                         if _print:
@@ -130,11 +132,30 @@ class Users:
     def user_list(self):
         for user in self.users.keys():
             print(self.color[3] + user + self.color[0])
+    
+    def __mk_dot_ushell(self):
+        if ".ushell" not in os.listdir(self.userPath):
+            os.mkdir(self.dotUshellDirPath)
+        
+        if "sys_vars.ush" not in os.listdir(self.dotUshellDirPath):
+            user_vars = [
+                'HOME="{}"\n'.format(self.userPath),
+                'BASEENV="{}"\n'.format(self.baseEnvPath),
+                'RAMDIR="{}"\n'.format(self.RAM_BLOCK_DIR_PATH)
+                ]
+            with open(self.dotUshellDirPath+"/sys_vars.ush", "w") as sys_vars:
+                for line in user_vars:
+                    sys_vars.write(line)
 
-    def updateuser(self, chdir=True):
-        cbdev = RAMBlockDev(512, 50)
-        os.VfsLfs2.mkfs(cbdev)
-        os.mount(cbdev, '{}'.format(self.RAM_BLOCK_DIR_PATH))
+        if "main.ush" not in os.listdir(self.dotUshellDirPath):
+            with open(self.dotUshellDirPath+"/main.ush", "w") as main:
+                main.write("ushell run sys_vars.ush")
+
+    def updateuser(self, chdir=True, mount_ramdisk=True):
+        if mount_ramdisk:
+            cbdev = RAMBlockDev(512, 50)
+            os.VfsLfs2.mkfs(cbdev)
+            os.mount(cbdev, '{}'.format(self.RAM_BLOCK_DIR_PATH))
 
         if self.username != ROOT_USERNAME:
             if self.username not in os.listdir(USERS_DIR):
@@ -148,6 +169,8 @@ class Users:
             self.root_access = True
             self.userPath = "/"
             self.baseEnvPath = "/lib"
+
+        self.dotUshellDirPath = self.userPath + "/.ushell"
         
         if "lib" not in os.listdir(self.userPath):
             os.mkdir(self.baseEnvPath)
@@ -155,17 +178,22 @@ class Users:
         self.envPath = self.baseEnvPath
         self.venvName = ".venv"
 
-        self._envs_data = self.db(self.userPath, ".virtualEnvs")
+        self._envs_data = self.db(self.dotUshellDirPath, ".virtualEnvs")
         self._envs_data.write(self.baseEnvPath, self.baseEnvPath)
 
-        self._user_data = self.db(self.userPath, ".data")
+        self._user_data = self.db(self.dotUshellDirPath, ".data")
+        self._user_vars[self.username] = dict()
+
 
         if self.network:
-            self._networks = self.db(self.userPath, ".networks")
+            self._networks = self.db(self.dotUshellDirPath, ".networks")
         
+        self.__mk_dot_ushell()
+
         if chdir:
-            os.chdir(self.userPath) 
+            os.chdir(self.userPath)
         
+
     def useradd(self, args):
         if self.root_access:
             username = args[0]
@@ -174,7 +202,7 @@ class Users:
             self.users.write(username, password)
             os.mkdir(USERS_DIR+"/"+username)
             print("Profile" + self.color[2] + " {} ".format(username) + self.color[0] + "created!")
-            self.updateuser(chdir=False)
+            self.updateuser(chdir=False, mount_ramdisk=False)
         else:
             self.no_permission()
     
@@ -198,16 +226,17 @@ class Users:
         else:
             self.no_permission()
 
-    def login(self, args):
-        os.umount("{}".format(self.RAM_BLOCK_DIR_PATH))
-        username = args[0]
-        self.username_password(username, None)
-        self.updateuser()
+    # def login(self, args):
+    #     os.umount("{}".format(self.RAM_BLOCK_DIR_PATH))
+    #     username = args[0]
+    #     self.username_password(username, None)
+    #     self.updateuser()
 
-    def logout(self):
-        os.umount("{}".format(self.RAM_BLOCK_DIR_PATH))
-        self.username_password(None, None)
-        self.updateuser()
+
+    # def logout(self):
+    #     os.umount("{}".format(self.RAM_BLOCK_DIR_PATH))
+    #     self.username_password(None, None)
+    #     self.updateuser()
     
     def rm(self, args):  # Remove file or tree
         agree = False
@@ -371,7 +400,7 @@ class Backend(Errors):
         return _path
 
     def clear(self):
-        print("\x1b[2J\x1b[H")
+            print("\x1b[2J\x1b[H")
 
     def pwd(self, get=False):
         if get:
@@ -567,3 +596,42 @@ class Backend(Errors):
         
         year, month, month_day, hour, min, second, weekday, year_day = time.localtime(time.time() + tz_offset)
         self.sys.stdout.write("{} {}  {} {:02d}:{:02d}:{:02d} {}\n".format(wd[weekday], months[month-1], month_day, hour, min, second, year))
+
+    
+    def echo(self, args):
+        if ">" not in args and ">>" not in args:
+            for a in args:
+                print(a, end=" ")
+            print()
+        
+        elif len(args) > 1  and args[-2] in [">", ">>"]:
+            _symbol = args[-2]
+            _str_list = args[:-2]
+            _str = ""
+            _file_to_write = args[-1]
+
+            if _symbol == ">":
+                _symbol = "w"
+
+            
+            elif _symbol == ">>":
+                _symbol = "a"
+
+            for s in _str_list:
+                _str += s + " "
+            _str.rstrip()
+
+            with open(_file_to_write, _symbol) as echo_file:
+                echo_file.write(_str)
+                echo_file.write("\n")
+    
+    def add_var(self, args):
+        for arg in args:
+
+            is_dollar_escaped = False
+            var_name, value = arg.split("=")
+
+            if value.startswith("$"):
+                value, is_dollar_escaped = self._user_vars[self.username][value[1:]]
+
+            self._user_vars[self.username][var_name] = value, is_dollar_escaped

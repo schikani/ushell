@@ -139,6 +139,7 @@ class Users:
         
         if "sys_vars.ush" not in os.listdir(self.dotUshellDirPath):
             user_vars = [
+                'ROOT="/"\n',
                 'HOME="{}"\n'.format(self.userPath),
                 'BASEENV="{}"\n'.format(self.baseEnvPath),
                 'RAMDIR="{}"\n'.format(self.RAM_BLOCK_DIR_PATH)

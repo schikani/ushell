@@ -21,7 +21,7 @@ COMMANDS = {
 
     "cp": ["terminal.cp(args)", "Copy <src> to <dest>"],
 
-    "head": ["terminal.head(args)", "View head of <file> with optional -l <no_of_line>"],
+    "head": ["terminal.head(args)", "View head of <file> with optional '-l' <no_of_line>"],
 
     "cat": ["terminal.cat(args)", "View entire <file>"],
 

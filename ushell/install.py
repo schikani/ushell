@@ -68,7 +68,7 @@ COMMANDS = {
     "ls": ["[print(x, end='  ') for x in terminal.ls(args)];print()", "List current dir or <specified dir>"],
 
     # upip
-    "upip": ["terminal.upip_manager(args)", "<install/uninstall> <package>"],
+    "upip": ["terminal.upip_manager(args)", "<install/uninstall> <package> with optional dir as '--ramdisk'"],
 
     # Micropython-Editor
     "write": ["terminal.editor(args)", "Write <to a file>"],
@@ -106,7 +106,7 @@ COMMANDS = {
     "ping": ["terminal.ping(args)", "Ping <to specified url/address>"],
 
     # Ushell (run)
-    "ushell": ["terminal._ushell(args)", "Internal ushell interpreter, run <file.ush>"],
+    "ushell": ["terminal._ushell(args)", "Internal ushell interpreter, run <file.ush> as optional '--bg' for threaded run"],
 
     # GPIO
     "gpio": ["terminal._gpio(args)", "Gpio configuration for a pin, init/set <specified pin> <mode/value>"],

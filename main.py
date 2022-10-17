@@ -5,5 +5,5 @@ from ushell.terminal import Terminal
 #	then you will also need to change all the occurrence of 'terminal' in install.py
 
 
-terminal = Terminal("schikani", "beetel123")  # Enter the username for terminal prefix
+terminal = Terminal("root", "MicroPython")  # Enter the username for terminal prefix
 terminal._prompt(run_pre_prompt_script=True)  # Get the terminal prompt

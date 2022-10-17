@@ -1,5 +1,5 @@
 # ==========================================
-# Copyright (c) 2021 Shivang Chikani
+# Copyright (c) 2022 Shivang Chikani
 # Email:     shivangchikani1@gmail.com
 # Date:      7 March 2021
 # Project:   ushell
@@ -11,6 +11,7 @@ from .ubrainDB import ubrainDB as db
 from .ram_block_dev import RAMBlockDev
 from .uftpd import start, stop, restart
 from .editor import pye
+from .uping import ping
 import time
 import machine
 import gc
@@ -74,7 +75,7 @@ class Users:
         self._user_data = ""
         self._user_vars = dict()
         self.dotUshellDirPath = ""
-        self.__prev_dirs = []
+        self.gpio_dict = dict()
 
     def welcome_message(self):
         print("""
@@ -150,7 +151,7 @@ class Users:
 
         if "main.ush" not in os.listdir(self.dotUshellDirPath):
             with open(self.dotUshellDirPath+"/main.ush", "w") as main:
-                main.write("ushell run sys_vars.ush")
+                main.write("ushell run sys_vars.ush\n")
 
     def updateuser(self, chdir=True, mount_ramdisk=True):
         if mount_ramdisk:
@@ -238,6 +239,15 @@ class Users:
     #     os.umount("{}".format(self.RAM_BLOCK_DIR_PATH))
     #     self.username_password(None, None)
     #     self.updateuser()
+
+    def _path_parser(self, path):
+        if path[0] == "~":
+            userPath = self.userPath
+            if userPath[-1] != "/":
+                userPath += "/"
+            path = userPath + path[1:]
+        
+        return path
     
     def rm(self, args):  # Remove file or tree
         agree = False
@@ -246,6 +256,7 @@ class Users:
             agree = True
 
         for item in args:
+            item = self._path_parser(item)
             if self.os.stat(item)[0] & 0x4000:  # Dir
                 ifVenv = self._path_finder(item)
                 try:
@@ -291,7 +302,7 @@ class Initialize(Users):
         self.upip = upip
 
         try:
-            self._commands.read("__ushell__")
+            self._commands.read("__ushell__")[0]
         except KeyError:
             import ushell.install
         
@@ -412,21 +423,21 @@ class Backend(Errors):
     def cd(self, args):
         if len(args) > 1:
             return self.too_many_args()
-        self.os.chdir(args[0])
+        self.os.chdir(self._path_parser(args[0]))
 
     def cat(self, *args):
         for f in args:
-            self.head(f, 1 << 30)
+            self.head(self._path_parser(f), 1 << 30)
 
     def mv(self, args):
         old = args[:-1]
         new = args[-1]
         for i in old:
-            self.os.rename(i, new)
+            self.os.rename(self._path_parser(i), self._path_parser(new))
 
     def mkdir(self, args):
         for d in args:
-            self.os.mkdir(d)
+            self.os.mkdir(self._path_parser(d))
 
     def platform(self, get=False):
         if get:
@@ -439,16 +450,17 @@ class Backend(Errors):
         for file in args:
             if file in (self._a, self._r):
                 return self.invalid_file_name()
-            with open(file, "w") as f:
+            with open(self._path_parser(file), "w") as f:
                 f.write("")
                 f.close()
 
     def cp(self, args):  # Copy file or tree
 
         item = args[:-1]
-        loc = args[-1]
+        loc = self._path_parser(args[-1])
 
         for i in item:
+            i = self._path_parser(i)
             if self.os.stat(i)[0] & 0x4000:  # Dir
                 self.os.mkdir("/".join((loc, i)))
                 for f in self.os.ilistdir(i):
@@ -478,6 +490,7 @@ class Backend(Errors):
 
         contents = []
         for index, d in enumerate(dirs):
+            d = self._path_parser(d)
             if helper:
                 contents = self.os.listdir(d)
                 return contents
@@ -512,6 +525,7 @@ class Backend(Errors):
                 args = args[:-2]
 
         for file in args:
+            file = self._path_parser(file)
             with open(file) as f:
                 self.sys.stdout.write("\n<" +
                                       self.color[5] + file + self.color[0]
@@ -563,7 +577,7 @@ class Backend(Errors):
         if len(args) == 0:
             self.pye(undo=_undo, tab_size=_tab)
         else:
-            self.pye(args[0], undo=_undo, tab_size=_tab)
+            self.pye(self._path_parser(args[0]), undo=_undo, tab_size=_tab)
     
     def ftp(self, args):
         if args[0] == "start":
@@ -572,6 +586,10 @@ class Backend(Errors):
             stop()
         elif args[0] == "restart":
             restart()
+    
+    def ping(self, args):
+        for a in args:
+            ping(a)
 
     def set_time_zone(self, args):
         # Example tz +5:30
@@ -609,11 +627,10 @@ class Backend(Errors):
             _symbol = args[-2]
             _str_list = args[:-2]
             _str = ""
-            _file_to_write = args[-1]
+            _file_to_write = self._path_parser(args[-1])
 
             if _symbol == ">":
                 _symbol = "w"
-
             
             elif _symbol == ">>":
                 _symbol = "a"
@@ -626,6 +643,7 @@ class Backend(Errors):
                 echo_file.write(_str)
                 echo_file.write("\n")
     
+
     def add_var(self, args):
         for arg in args:
 
@@ -636,3 +654,73 @@ class Backend(Errors):
                 value, is_dollar_escaped = self._user_vars[self.username][value[1:]]
 
             self._user_vars[self.username][var_name] = value, is_dollar_escaped
+    
+
+    def _gpio(self, args):
+        '''
+            To control GPIO
+        '''
+        cmd = args[0]
+        args = args[1:]
+
+        if cmd == "init":
+            pin_no = args[0]
+            inp_out = args[1]
+            try:
+                pin_no = int(pin_no)
+                inp_out = inp_out.lower()
+
+                if inp_out == "out":
+                    inp_out = machine.Pin.OUT
+                elif inp_out == "in":
+                    inp_out = machine.Pin.IN
+
+                self.gpio_dict[pin_no] = machine.Pin(pin_no, inp_out)
+                 
+
+            except ValueError:
+                print(self.color[4] + "Invalid pin number!" + self.color[0])
+        
+        elif cmd == "set":
+            pin_no = args[0]
+            value = args[1]
+
+            try:
+                pin_no = int(pin_no)
+                value = value.lower()
+
+                if value in ["high", "true", "1"]:
+                    value = 1
+                elif value in ["low", "false", "0"]:
+                    value = 0
+
+                self.gpio_dict[pin_no].value(value)
+                
+            except ValueError:
+                print(self.color[4] + "Invalid pin number!" + self.color[0])
+    
+    def _sleep(self, args):
+        how_long = args[0]
+        try:
+            how_long = float(how_long)
+            time.sleep(how_long)
+
+        except ValueError:
+            pass
+    
+
+    def _help(self, args):
+        if args:
+            for arg in args:
+                if arg in self._commands.keys():
+                    print("{}".format(self._commands.read(arg)[1]))
+                else:
+                    print(self.color[4]+"Invalid command '{}'".format(arg)+self.color[0])
+        
+        else:
+            # print(self._commands.items())
+            for cmd, value in zip(self._commands.keys(), self._commands.values()):
+                value = value[1]
+                if cmd != "__ushell__":
+                    print(self.color[3]+"{}".format(cmd)+self.color[0]+": "+"{}".format(value))
+

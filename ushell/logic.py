@@ -1,5 +1,5 @@
 # ==========================================
-# Copyright (c) 2021 Shivang Chikani
+# Copyright (c) 2022 Shivang Chikani
 # Email:     shivangchikani1@gmail.com
 # Date:      7 March 2021
 # Project:   ushell
@@ -122,7 +122,7 @@ class Logic(Environment):
     def execute(self, cmd, args):
 
         try:
-            exec(self._commands.read(cmd))
+            exec(self._commands.read(cmd)[0])
 
         except TypeError:
             pass

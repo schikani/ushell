@@ -1,5 +1,5 @@
 # ==========================================
-# Copyright (c) 2021 Shivang Chikani
+# Copyright (c) 2022 Shivang Chikani
 # Email:     shivangchikani1@gmail.com
 # Date:      7 March 2021
 # Project:   ushell
@@ -11,96 +11,106 @@ init = Initialize()
 db = init._commands
 
 COMMANDS = {
-    "__ushell__": True,
+    "__ushell__": [True,""],
 
-    "pwd": "terminal.pwd()",
+    "sleep": ["terminal._sleep(args)", "sleep for float second/s"],
 
-    "cd": "terminal.cd(args)",
+    "pwd": ["terminal.pwd()", "Get current working directory"],
 
-    "cp": "terminal.cp(args)",
+    "cd": ["terminal.cd(args)", ""],
 
-    "head": "terminal.head(args)",
+    "cp": ["terminal.cp(args)", ""],
 
-    "cat": "terminal.cat(args)",
+    "head": ["terminal.head(args)", ""],
 
-    "touch": "terminal.touch(args)",
+    "cat": ["terminal.cat(args)", ""],
 
-    "mv": "terminal.mv(args)",
+    "touch": ["terminal.touch(args)", ""],
 
-    "rm": "terminal.rm(args)",
+    "mv": ["terminal.mv(args)", ""],
 
-    "mkdir": "terminal.mkdir(args)",
+    "rm": ["terminal.rm(args)", ""],
 
-    "mkenv": "terminal.mkenv(args)",
+    "mkdir": ["terminal.mkdir(args)", ""],
 
-    "networks": "[print(x, end='  ') for x in terminal.networks()];print('')",
+    "mkenv": ["terminal.mkenv(args)", ""],
 
-    "venvs": "[print(x, end='  ') for x in terminal.venvs()];print('')",
+    "networks": ["[print(x, end='  ') for x in terminal.networks()];print('')", ""],
 
-    "wifiscan": "terminal.wifi_scan()",
+    "venvs": ["[print(x, end='  ') for x in terminal.venvs()];print('')", ""],
 
-    "wificonnect": "terminal.scan_and_connect(args)",
+    "wifiscan": ["terminal.wifi_scan()", ""],
 
-    "wifiadd": "terminal.add_network(args)",
+    "wificonnect": ["terminal.scan_and_connect(args)", ""],
 
-    "wifiremove": "terminal.remove_network(args)",
+    "wifiadd": ["terminal.add_network(args)", ""],
 
-    "clear": "terminal.clear()",
+    "wifiremove": ["terminal.remove_network(args)", ""],
 
-    "ifconfig": "terminal.ifconfig()",
+    "clear": ["terminal.clear()", ""],
 
-    "platform": "terminal.platform()",
+    "ifconfig": ["terminal.ifconfig()", ""],
 
-    "repl": "terminal.repl()",
+    "platform": ["terminal.platform()", ""],
 
-    "whoami": "terminal.whoami()",
+    "repl": ["terminal.repl()", ""],
 
-    "activate": "terminal.environment('activate', args)",
+    "whoami": ["terminal.whoami()", ""],
 
-    "deactivate": "terminal.environment('deactivate')",
+    "activate": ["terminal.environment('activate', args)", ""],
 
-    "reboot": "terminal.reboot()",
+    "deactivate": ["terminal.environment('deactivate')", ""],
 
-    "run": "terminal.run(args)",
+    "reboot": ["terminal.reboot()", ""],
 
-    "ls": "[print(x, end='  ') for x in terminal.ls(args)];print()",
+    "run": ["terminal.run(args)", ""],
+
+    "ls": ["[print(x, end='  ') for x in terminal.ls(args)];print()", ""],
 
     # upip
-    "upip": "terminal.upip_manager(args)",
+    "upip": ["terminal.upip_manager(args)", ""],
 
     # Micropython-Editor
-    "write": "terminal.editor(args)",
+    "write": ["terminal.editor(args)", ""],
 
     # Users
-    "users": "terminal.user_list()",
+    "users": ["terminal.user_list()", ""],
 
     # Add user
-    "useradd": "terminal.useradd(args)",
+    "useradd": ["terminal.useradd(args)", ""],
 
     # Delete user
-    "userdel": "terminal.userdel(args)",
+    "userdel": ["terminal.userdel(args)", ""],
 
     # Login
-    "login": "terminal.login(args)",
+    "login": ["terminal.login(args)", ""],
     
     # Logout
-    "logout": "terminal.logout()",
+    "logout": ["terminal.logout()", ""],
 
     # Ftp
-    "ftp": "terminal.ftp(args)",
+    "ftp": ["terminal.ftp(args)", ""],
 
     # Set-time-zone
     # Example tz +5:30
-    "tz": "terminal.set_time_zone(args)",
+    "tz": ["terminal.set_time_zone(args)", ""],
 
     # Get current date
-    "date": "terminal.date(args)",
+    "date": ["terminal.date(args)", ""],
 
     # Echo
-    "echo": "terminal.echo(args)",
+    "echo": ["terminal.echo(args)", ""],
+
+    #Ping
+    "ping": ["terminal.ping(args)", ""],
 
     # Ushell (run)
-    "ushell": "terminal._ushell(args)"
+    "ushell": ["terminal._ushell(args)", ""],
+
+    # GPIO
+    "gpio": ["terminal._gpio(args)", ""],
+
+    "help": ["terminal._help(args)", "Help for all the commands"]
 }
 
 

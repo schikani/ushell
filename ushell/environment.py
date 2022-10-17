@@ -1,5 +1,5 @@
 # ==========================================
-# Copyright (c) 2021 Shivang Chikani
+# Copyright (c) 2022 Shivang Chikani
 # Email:     shivangchikani1@gmail.com
 # Date:      7 March 2021
 # Project:   ushell
@@ -69,11 +69,23 @@ class Environment(Backend):
         if self.network:
             sta_if = self.network.WLAN(self.network.STA_IF)
             sta_if.active(True)
-            for netw in sta_if.scan():
-                print(self.color[6]
+            counter = 1
+            scanned = sta_if.scan()
+            for netw in scanned:
+                print("[{}] ".format(counter)
+                    + self.color[6]
                     + netw[0].decode('utf-8')
                     + self.color[0], end="  ")
                 print("")
+                counter += 1
+            try:
+                index = int(input("Enter index number to add a network: "))
+                index -= 1
+                if index > -1 and index < len(scanned)-1:
+                    self.add_network([scanned[index][0].decode('utf-8')])
+            except ValueError:
+                pass
+
         else:
             return self.non_network_platform()
 

@@ -124,7 +124,7 @@ def install(dict, db, prefix):
         init.progress_bar(index + 1, total=dict_len, prefix=prefix, suffix='Complete', length=50)
 
     print("The System will now reboot")
-    db.close()
+    db.flush()
     init.reboot()
 
 

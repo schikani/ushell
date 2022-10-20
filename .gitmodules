@@ -1,0 +1,3 @@
+[submodule "jsonDB"]
+	path = jsonDB
+	url = https://github.com/schikani/jsonDB.git

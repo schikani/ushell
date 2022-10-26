@@ -5,7 +5,7 @@
 # Project:   ushell
 # ==========================================
 
-__version__ = "1.1.0"
+__version__ = "2.1.0"
 
 from jsonDB import jsonDB
 from brain_lang import BrainLang
@@ -57,7 +57,7 @@ class Users:
             os.mkdir(USERS_DIR)
 
         self.db = jsonDB
-        self.bl = BrainLang
+        self.brl = BrainLang
         self.network = network
         self.ushellDataPath = "/.ushellData"
         self._commands = self.db(self.ushellDataPath, ".commands")
@@ -249,26 +249,26 @@ class Users:
             item = self._path_parser(item)
             if self.os.stat(item)[0] & 0x4000:  # Dir
                 ifVenv = self._path_finder(item)
-                try:
-                    if ifVenv == self._envs_data.read(ifVenv):
-                        if not agree:
-                            agree = input("{}{}{} is a venv. Do you want to delete it?\n"
-                                        "Type y/n: ".format(self.color[5], ifVenv, self.color[0]))
+                
+                if ifVenv == self._envs_data.read(ifVenv):
+                    if not agree:
+                        agree = input("{}{}{} is a venv. Do you want to delete it?\n"
+                                    "Type y/n: ".format(self.color[5], ifVenv, self.color[0]))
 
-                            if agree.lower() == "y":
-                                agree = True
-                            else:
-                                agree = False
+                        if agree.lower() == "y":
+                            agree = True
+                        else:
+                            agree = False
 
-                        if agree:
-                            print("Removing venv: {}"
-                                  .format(self.color[5] + ifVenv + self.color[0]))
-                            self._envs_data.remove(ifVenv)
-                            self._envs_data.flush()
-                            self.envPath = self.baseEnvPath
-                            raise KeyError
+                    if agree:
+                        print("Removing venv: {}"
+                                .format(self.color[5] + ifVenv + self.color[0]))
+                        self._envs_data.remove(ifVenv)
+                        self._envs_data.flush()
+                        self.envPath = self.baseEnvPath
+                        raise KeyError
 
-                except KeyError:
+                else:
                     for f in self.os.ilistdir(item):
                         if f[0] not in ('.', '..'):
                             self.rm(["/".join((item, f[0]))])  # File or Dir

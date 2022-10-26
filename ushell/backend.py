@@ -6,8 +6,9 @@
 # ==========================================
 
 __version__ = "1.1.0"
-# from .ubrainDB import ubrainDB as db
-from jsonDB import jsonDB as DB
+
+from jsonDB import jsonDB
+from brain_lang import BrainLang
 from .ram_block_dev import RAMBlockDev
 from .uftpd import start, stop, restart
 from .editor import pye
@@ -55,7 +56,8 @@ class Users:
         if ".USERS" not in os.listdir("/"):
             os.mkdir(USERS_DIR)
 
-        self.db = DB
+        self.db = jsonDB
+        self.bl = BrainLang
         self.network = network
         self.ushellDataPath = "/.ushellData"
         self._commands = self.db(self.ushellDataPath, ".commands")

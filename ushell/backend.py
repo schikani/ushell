@@ -93,11 +93,13 @@ class Users:
         if ROOT_USERNAME not in self.users.keys():
             self.users.write(ROOT_USERNAME, ROOT_PASSWORD)
 
+        _pass_count = 2
+
         while True:
             if username:
                 if username in self.users.keys():
                     if not password:
-                        print("Enter password for '{}': ".format(username), end="")
+                        print("Enter password for '{}' (tries left {}): ".format(username, _pass_count+1), end="")
                         password = sys.stdin.readline().strip("\n")
 
                     if password == self.users.read(username):
@@ -109,17 +111,32 @@ class Users:
                     else:
                         if _print:
                             print("Incorect password!")
-                        raise NameError
+                        
+                        if _pass_count == 0:
+                            return False
+
+                        else:
+                            _pass_count -= 1
+                            password = None
+                            continue
+
 
                 else:
                     if _print:
                         print("No user found named '{}'".format(username))
-                        raise NameError
+
+                    if _pass_count == 0:
+                        return False    
+
+                    else:
+                        _pass_count -= 1
+                        username = None
+                        continue
 
                 break
 
             else:
-                username = input("Enter ushell username: ")
+                username = input("Enter ushell username (tries left {}): ".format(_pass_count+1))
                 continue
 
         if _inplace:
@@ -266,7 +283,7 @@ class Users:
                         self._envs_data.remove(ifVenv)
                         self._envs_data.flush()
                         self.envPath = self.baseEnvPath
-                        raise KeyError
+                        self.rm([item])
 
                 else:
                     for f in self.os.ilistdir(item):

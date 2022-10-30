@@ -101,12 +101,26 @@ class Logic(Environment):
                     self.add_var(args)
             
                 elif cmd.startswith("$"):
-                    cmd = self._user_vars[self.username][cmd[1:]][0]
-                    self.execute(cmd, args)
+
+                    # Try to find in user vars dictionary
+                    if cmd[1:] in self._user_vars[self.username].keys():
+                        cmd = self._user_vars[self.username][cmd[1:]][0]
+                        self.execute(cmd, args)
+                    
+                    # Try to find in commands database
+                    elif cmd[1:] in self._commands.keys():
+                        cmd = self._commands.read(cmd[1:])[0]
+                        exec(cmd)
+                    
+                    else:
+                        raise KeyError
 
                 else:
-                    return self.command_not_found(cmd)
+                    raise KeyError
 
+        
+        except KeyError:
+            return self.command_not_found(cmd)
 
         except TypeError:
             pass

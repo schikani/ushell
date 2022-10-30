@@ -89,31 +89,40 @@ class Terminal(Logic):
     
     def _ushell(self, args):
 
+        success = False
+
         if args[-1] == "--bg":
             _thread.start_new_thread(self._ushell, (args[:-1],))
-            return
+            success = True
+        
+        else:
 
-        ushell_cmd = args[0]
-        ushell_args = args[1:]
+            ushell_cmd = args[0]
+            ushell_args = args[1:]
 
-        if ushell_cmd == "run":
-            for arg in ushell_args:
-                arg = self._path_parser(arg)
-                if self.os.stat(arg)[0] & 0x4000: #Dir
-                    current_dir = self.pwd(True)
-                    self.cd([arg])
-                    dir_files = self.os.listdir()
-                    main_file = "main.ush"
-                    if not main_file in dir_files:
-                        self.touch(main_file)
-                    self._ushell(["run", main_file])
-                    self.cd([current_dir])
+            if ushell_cmd == "run":
+                for arg in ushell_args:
+                    arg = self._path_parser(arg)
+                    if self.os.stat(arg)[0] & 0x4000: #Dir
+                        current_dir = self.pwd(True)
+                        self.cd([arg])
+                        dir_files = self.os.listdir()
+                        main_file = "main.ush"
+                        if not main_file in dir_files:
+                            self.touch(main_file)
+                        self._ushell(["run", main_file])
+                        self.cd([current_dir])
+                        
 
+                    else:
+                        with open(arg, "r") as ushell_file:
+                            for line in ushell_file:
+                                self.tokenizer(line)
 
-                else:
-                    with open(arg, "r") as ushell_file:
-                        for line in ushell_file:
-                            self.tokenizer(line)
+                        success = True
+        
+        return success
+                            
             
 
     def __repr__(self):

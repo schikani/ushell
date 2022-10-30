@@ -14,7 +14,9 @@ if len(args) > 2:
 else:
     _board_name_ = "pyboard"
 
+rshell_mkdir = f"mkdir /{_board_name_}/lib; mkdir /{_board_name_}/lib/ushell; mkdir /{_board_name_}/lib/jsonDB; mkdir /{_board_name_}/lib/brain_lang"
+rshell_cp_files = f"cp -r ./ushell/*.py /{_board_name_}/lib/ushell; cp -r ./jsonDB/*.py /{_board_name_}/lib/jsonDB; cp -r ./brain_lang/*.py /{_board_name_}/lib/brain_lang; cp ush.py /{_board_name_}"
+rshell_repl_cmds = f"repl ~ from ush import *"
+rshell_all_cmds = f"{rshell_mkdir}; {rshell_cp_files}; {rshell_repl_cmds}"
 
-_rshell_cmds = f"mkdir /{_board_name_}/lib; cp ush.py /{_board_name_}/lib; cp -r ushell /{_board_name_}/lib; cp -r jsonDB /{_board_name_}/lib; repl ~ import machine ~ machine.reset()"
-
-os.system(f'rshell --buffer-size 8024 -p {_port_} "{_rshell_cmds}"')
+os.system(f'rshell --buffer-size 8024 -p {_port_} "{rshell_all_cmds}"')

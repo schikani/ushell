@@ -40,12 +40,12 @@ class Environment(Backend):
 
     def add_network(self, args):
         ssid = args[0]
-        # password = args[1]
         print("Enter password for network " + self.color[2] + "{}".format(ssid) + self.color[0])
         password = self.sys.stdin.readline().strip("\n")
 
         if self.network:
             self._networks.write(ssid, password)
+            self._networks.flush()
             print("Network {} added successfully."
                   .format(self.color[6] + ssid + self.color[0]))
 
@@ -57,6 +57,7 @@ class Environment(Backend):
             for network in args:
                 try:
                     self._networks.remove(network)
+                    self._networks.flush()
                     print("Network {} removed successfully."
                         .format(self.color[6] + network + self.color[0]))
 
@@ -101,12 +102,13 @@ class Environment(Backend):
                     if not args:
                         print('Scanning for available networks ...')
                         for netw in sta_if.scan():
+                            netw = netw[0].decode('utf-8')
                             # catch ssid from index 0 and
                             # compare it with the dictionary keys
-                            if netw[0] in dict_B.keys():
-                                found = found.format(netw[0].decode('utf-8'))
+                            if netw in dict_B.keys():
+                                found = found.format(netw)
                                 print("found: {}".format(found))
-                                sta_if.connect(netw[0], dict_B[netw[0]])
+                                sta_if.connect(netw, dict_B[netw])
                                 break
                             else:
                                 return self.no_networks_in_database()
@@ -114,11 +116,10 @@ class Environment(Backend):
                         sta_if.active(False)
                         sta_if.active(True)
                         ssid = args[0]
-                        ssid_B = ssid.encode()
-                        if ssid_B in dict_B.keys():
+                        if ssid in dict_B.keys():
                             found = found.format(ssid)
                             print('Connecting to network: {}'.format(found))
-                            sta_if.connect(ssid_B, dict_B[ssid_B])
+                            sta_if.connect(ssid, dict_B[ssid])
                         else:
                             return self.network_mentioned_not_found(ssid)
                     while not sta_if.isconnected():
@@ -157,6 +158,7 @@ class Environment(Backend):
             _path = self._path_finder(path)
             self._venv(_path)
             self._envs_data.write(_path, _path)
+            self._envs_data.flush()
 
     def environment(self, *args):
         if args[0] == 'activate':
@@ -246,7 +248,7 @@ class Environment(Backend):
                         else:
                             return self.no_record_for_pkgs()
 
-            venv.close()
+            venv.flush()
 
         else:
             return self.non_network_platform()

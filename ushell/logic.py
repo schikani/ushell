@@ -12,37 +12,6 @@ class Logic(Environment):
     def __init__(self):
         super().__init__()
     
-    def __quotes_parser(self, args):
-        new_args = []
-        _a = ""
-        for a in args:
-            if a.startswith('"') and not a.endswith('"'):
-                a = a[1:]
-                _a += a + " "
-
-            elif not a.startswith('"') and a.endswith('"'):
-                a = a[:-1]
-                _a += a
-                new_args.append(_a)
-                _a = ""
-            
-            elif a.startswith('"') and a.endswith('"'):
-                a = a[1:-1]
-                new_args.append(a)
-
-            else:
-                new_args.append(a)
-        
-        for index, elem in enumerate(new_args):
-            if elem.startswith("$"):
-                try:
-                    elem = self._user_vars[self.username][elem[1:]]
-                except KeyError:
-                    print(self.color[4] + "'{}'".format(elem[1:]) + " variable not found!" +self.color[0])
-                    return
-                new_args[index] = elem
-    
-        return new_args
     
     def token_str_parser(self, _str):
         tokens = []
@@ -89,7 +58,7 @@ class Logic(Environment):
 
             if dollar_index != -1:
                 for v_name, v_val in self._user_vars[self.username].items():
-                    elem = elem.replace("${}".format(v_name), v_val[0])
+                    elem = elem.replace("${}".format(v_name), v_val)
                 
                 tokens[index] = elem
         
@@ -122,25 +91,42 @@ class Logic(Environment):
     def execute(self, cmd, args):
 
         try:
-            exec(self._commands.read(cmd)[0])
+            _cmd = self._commands.read(cmd)
+            if _cmd:
+                exec(_cmd[0])
+
+            else:
+                if cmd.find("=") != -1:
+                    args.insert(0, cmd)
+                    self.add_var(args)
+            
+                elif cmd.startswith("$"):
+
+                    # Try to find in user vars dictionary
+                    if cmd[1:] in self._user_vars[self.username].keys():
+                        cmd = self._user_vars[self.username][cmd[1:]][0]
+                        self.execute(cmd, args)
+                    
+                    # Try to find in commands database
+                    elif cmd[1:] in self._commands.keys():
+                        cmd = self._commands.read(cmd[1:])[0]
+                        exec(cmd)
+                    
+                    else:
+                        raise KeyError
+
+                else:
+                    raise KeyError
+
+        
+        except KeyError:
+            return self.command_not_found(cmd)
 
         except TypeError:
             pass
 
         except IndexError:
             self.missing_args()
-
-        except KeyError:
-            if cmd.find("=") != -1:
-                args.insert(0, cmd)
-                self.add_var(args)
-            
-            elif cmd.startswith("$"):
-                cmd = self._user_vars[self.username][cmd[1:]][0]
-                self.execute(cmd, args)
-
-            else:
-                return self.command_not_found(cmd)
         
         except SyntaxError as s:
             # Giving syntax error when logout is used and logged in as root

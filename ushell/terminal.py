@@ -11,12 +11,16 @@ import _thread
 class Terminal(Logic):
     def __init__(self, username=None, password=None):
         super().__init__()
+        self.__ok_to_go = False
         self.clear()
         self.welcome_message()
         if self.username_password(username, password, self.users):
             self.updateuser()
             self.clear()
             self.prompt = "({0}){1}{2}@{3}{4}:{5}{6}{7}{8}{9} "
+            self.__ok_to_go = True
+        else:
+            print(self.color[4] + "Unable to login!" + self.color[0])
 
     def whoami(self, get=False):
         if get:
@@ -43,72 +47,82 @@ class Terminal(Logic):
         self._ushell(["run", self.dotUshellDirPath])
     
     def _prompt(self, run_pre_prompt_script=False):
+        
+        if self.__ok_to_go:
+            if run_pre_prompt_script:
+                self._pre_prompt_script()
 
-        if run_pre_prompt_script:
-            self._pre_prompt_script()
+            while True:
+                env_path = self.envPath
+                pwd = self.pwd(True)
 
-        while True:
-            env_path = self.envPath
-            pwd = self.pwd(True)
+                if not self.userPath == "/":
+                    env_path = env_path.replace(self.userPath, "~")
+                    pwd = pwd.replace(self.userPath, "~")
 
-            if not self.userPath == "/":
-                env_path = env_path.replace(self.userPath, "~")
-                pwd = pwd.replace(self.userPath, "~")
+                try:
+                    self._envs_data.read(self.pwd(True))
+                    isEnv = True
+                except KeyError:
+                    isEnv = False
 
-            try:
-                self._envs_data.read(self.pwd(True))
-                isEnv = True
-            except KeyError:
-                isEnv = False
+                # Set colors
+                prompt = self.prompt \
+                    .format(env_path, self.color[3],
+                            self.whoami(True), self.platform(True),
+                            self.color[1], (self.color[5] if isEnv else self.color[2]), pwd,
+                            self.color[1], "#" if self.username == "root" else "$",
+                            self.color[0])
 
-            # Set colors
-            prompt = self.prompt \
-                .format(env_path, self.color[3],
-                        self.whoami(True), self.platform(True),
-                        self.color[1], (self.color[5] if isEnv else self.color[2]), pwd,
-                        self.color[1], "#" if self.username == "root" else "$",
-                        self.color[0])
+                try:
 
-            try:
+                    self.tokenizer(inp=input(prompt))
 
-                self.tokenizer(inp=input(prompt))
+                except OSError as error:
+                    self.os_error(error)
 
-            except OSError as error:
-                self.os_error(error)
+                except KeyboardInterrupt:
+                    self.clear()
 
-            except KeyboardInterrupt:
-                self.clear()
-
-            except EOFError:
-                break
+                except EOFError:
+                    break
     
     def _ushell(self, args):
 
+        success = False
+
         if args[-1] == "--bg":
             _thread.start_new_thread(self._ushell, (args[:-1],))
-            return
+            success = True
+        
+        else:
 
-        ushell_cmd = args[0]
-        ushell_args = args[1:]
+            ushell_cmd = args[0]
+            ushell_args = args[1:]
 
-        if ushell_cmd == "run":
-            for arg in ushell_args:
-                arg = self._path_parser(arg)
-                if self.os.stat(arg)[0] & 0x4000: #Dir
-                    current_dir = self.pwd(True)
-                    self.cd([arg])
-                    dir_files = self.os.listdir()
-                    main_file = "main.ush"
-                    if not main_file in dir_files:
-                        self.touch(main_file)
-                    self._ushell(["run", main_file])
-                    self.cd([current_dir])
+            if ushell_cmd == "run":
+                for arg in ushell_args:
+                    arg = self._path_parser(arg)
+                    if self.os.stat(arg)[0] & 0x4000: #Dir
+                        current_dir = self.pwd(True)
+                        self.cd([arg])
+                        dir_files = self.os.listdir()
+                        main_file = "main.ush"
+                        if not main_file in dir_files:
+                            self.touch(main_file)
+                        self._ushell(["run", main_file])
+                        self.cd([current_dir])
+                        
 
+                    else:
+                        with open(arg, "r") as ushell_file:
+                            for line in ushell_file:
+                                self.tokenizer(line)
 
-                else:
-                    with open(arg, "r") as ushell_file:
-                        for line in ushell_file:
-                            self.tokenizer(line)
+                        success = True
+        
+        return success
+                            
             
 
     def __repr__(self):

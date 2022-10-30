@@ -5,9 +5,10 @@
 # Project:   ushell
 # ==========================================
 
-__version__ = "1.1.0"
+__version__ = "2.1.0"
 
-from .ubrainDB import ubrainDB as db
+from jsonDB import jsonDB
+from brain_lang import BrainLang
 from .ram_block_dev import RAMBlockDev
 from .uftpd import start, stop, restart
 from .editor import pye
@@ -55,7 +56,8 @@ class Users:
         if ".USERS" not in os.listdir("/"):
             os.mkdir(USERS_DIR)
 
-        self.db = db
+        self.db = jsonDB
+        self.brl = BrainLang
         self.network = network
         self.ushellDataPath = "/.ushellData"
         self._commands = self.db(self.ushellDataPath, ".commands")
@@ -63,6 +65,7 @@ class Users:
 
         if ROOT_USERNAME not in self.users.keys():
             self.users.write(ROOT_USERNAME, ROOT_PASSWORD)
+            self.users.flush()
 
         self.root_access = False
         self.username = ""
@@ -90,11 +93,13 @@ class Users:
         if ROOT_USERNAME not in self.users.keys():
             self.users.write(ROOT_USERNAME, ROOT_PASSWORD)
 
+        _pass_count = 2
+
         while True:
             if username:
                 if username in self.users.keys():
                     if not password:
-                        print("Enter password for '{}': ".format(username), end="")
+                        print("Enter password for '{}' (tries left {}): ".format(username, _pass_count+1), end="")
                         password = sys.stdin.readline().strip("\n")
 
                     if password == self.users.read(username):
@@ -106,17 +111,32 @@ class Users:
                     else:
                         if _print:
                             print("Incorect password!")
-                        raise NameError
+                        
+                        if _pass_count == 0:
+                            return False
+
+                        else:
+                            _pass_count -= 1
+                            password = None
+                            continue
+
 
                 else:
                     if _print:
                         print("No user found named '{}'".format(username))
-                        raise NameError
+
+                    if _pass_count == 0:
+                        return False    
+
+                    else:
+                        _pass_count -= 1
+                        username = None
+                        continue
 
                 break
 
             else:
-                username = input("Enter ushell username: ")
+                username = input("Enter ushell username (tries left {}): ".format(_pass_count+1))
                 continue
 
         if _inplace:
@@ -143,7 +163,7 @@ class Users:
                 'ROOT="/"\n',
                 'HOME="{}"\n'.format(self.userPath),
                 'BASEENV="{}"\n'.format(self.baseEnvPath),
-                'RAMDIR="{}"\n'.format(self.RAM_BLOCK_DIR_PATH)
+                'RAMDISK="{}"\n'.format(self.RAM_BLOCK_DIR_PATH)
                 ]
             with open(self.dotUshellDirPath+"/sys_vars.ush", "w") as sys_vars:
                 for line in user_vars:
@@ -182,9 +202,11 @@ class Users:
 
         self._envs_data = self.db(self.dotUshellDirPath, ".virtualEnvs")
         self._envs_data.write(self.baseEnvPath, self.baseEnvPath)
+        self._envs_data.flush()
 
         self._user_data = self.db(self.dotUshellDirPath, ".data")
         self._user_vars[self.username] = dict()
+
 
 
         if self.network:
@@ -202,6 +224,7 @@ class Users:
             print("Enter password for new profile" + self.color[2] + " {}".format(username) + self.color[0])
             password = sys.stdin.readline().strip("\n")
             self.users.write(username, password)
+            self.users.flush()
             os.mkdir(USERS_DIR+"/"+username)
             print("Profile" + self.color[2] + " {} ".format(username) + self.color[0] + "created!")
             self.updateuser(chdir=False, mount_ramdisk=False)
@@ -212,33 +235,17 @@ class Users:
         if self.root_access and args[0] != ROOT_USERNAME:
             username = args[0]
             if username in self.users.keys():
-                # print("Enter password to delete profile" + self.color[2] + " {}".format(username) + self.color[0])
-                # password = sys.stdin.readline().strip("\n")
                 if self.username_password(username, None, _inplace=False):
                     self.users.remove(username)
+                    self.users.flush()
                     self.rm([USERS_DIR+"/"+username, "-y"])
                     print("User {} deleted successfully!".format(username))
-                    # if username == self.username:
-                    #     self.username_password(ROOT_USERNAME, None, self.users)
-                    #     self.updateuser()
                 else:
                     print("Incorrect password!")
             else:
                 print("No user named" + self.color[2] + " {} ".format(username) + self.color[0] + "found in records!")
         else:
             self.no_permission()
-
-    # def login(self, args):
-    #     os.umount("{}".format(self.RAM_BLOCK_DIR_PATH))
-    #     username = args[0]
-    #     self.username_password(username, None)
-    #     self.updateuser()
-
-
-    # def logout(self):
-    #     os.umount("{}".format(self.RAM_BLOCK_DIR_PATH))
-    #     self.username_password(None, None)
-    #     self.updateuser()
 
     def _path_parser(self, path):
         if path[0] == "~":
@@ -259,25 +266,26 @@ class Users:
             item = self._path_parser(item)
             if self.os.stat(item)[0] & 0x4000:  # Dir
                 ifVenv = self._path_finder(item)
-                try:
-                    if ifVenv == self._envs_data.read(ifVenv):
-                        if not agree:
-                            agree = input("{}{}{} is a venv. Do you want to delete it?\n"
-                                        "Type y/n: ".format(self.color[5], ifVenv, self.color[0]))
+                
+                if ifVenv == self._envs_data.read(ifVenv):
+                    if not agree:
+                        agree = input("{}{}{} is a venv. Do you want to delete it?\n"
+                                    "Type y/n: ".format(self.color[5], ifVenv, self.color[0]))
 
-                            if agree.lower() == "y":
-                                agree = True
-                            else:
-                                agree = False
+                        if agree.lower() == "y":
+                            agree = True
+                        else:
+                            agree = False
 
-                        if agree:
-                            print("Removing venv: {}"
-                                  .format(self.color[5] + ifVenv + self.color[0]))
-                            self._envs_data.remove(ifVenv)
-                            self.envPath = self.baseEnvPath
-                            raise KeyError
+                    if agree:
+                        print("Removing venv: {}"
+                                .format(self.color[5] + ifVenv + self.color[0]))
+                        self._envs_data.remove(ifVenv)
+                        self._envs_data.flush()
+                        self.envPath = self.baseEnvPath
+                        self.rm([item])
 
-                except KeyError:
+                else:
                     for f in self.os.ilistdir(item):
                         if f[0] not in ('.', '..'):
                             self.rm(["/".join((item, f[0]))])  # File or Dir
@@ -301,11 +309,9 @@ class Initialize(Users):
         self.pye = pye
         self.upip = upip
 
-        try:
-            self._commands.read("__ushell__")[0]
-        except KeyError:
+        if not self._commands.exists("__ushell__"):
             import ushell.install
-        
+
 
     # Progress Bar
     def progress_bar(self, iteration, total, prefix='',
@@ -602,13 +608,14 @@ class Backend(Errors):
         tz_offset = (hour * 3600) + (minutes * 60)
 
         self._user_data.write("TZ_OFFSET", tz_offset)
+        self._user_data.flush()
     
     def date(self, args):
 
         wd = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-        if "TZ_OFFSET" in self._user_data.keys():
+        if self._user_data.exists("TZ_OFFSET"):
             tz_offset = self._user_data.read("TZ_OFFSET")
         else:
             tz_offset = 0
@@ -647,13 +654,12 @@ class Backend(Errors):
     def add_var(self, args):
         for arg in args:
 
-            is_dollar_escaped = False
             var_name, value = arg.split("=")
 
             if value.startswith("$"):
-                value, is_dollar_escaped = self._user_vars[self.username][value[1:]]
+                value = self._user_vars[self.username][value[1:]]
 
-            self._user_vars[self.username][var_name] = value, is_dollar_escaped
+            self._user_vars[self.username][var_name] = value
     
 
     def _gpio(self, args):
@@ -718,7 +724,6 @@ class Backend(Errors):
                     print(self.color[4]+"Invalid command '{}'".format(arg)+self.color[0])
         
         else:
-            # print(self._commands.items())
             for cmd, value in zip(self._commands.keys(), self._commands.values()):
                 value = value[1]
                 if cmd != "__ushell__":

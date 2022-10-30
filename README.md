@@ -12,4 +12,3 @@ wifiscan, clear, ifconfig, platform,
 repl, upip, write, users, useradd,
 userdel, login, logout, reboot
 ```
-

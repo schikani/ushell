@@ -106,7 +106,7 @@ COMMANDS = {
     "ping": ["terminal.ping(args)", "Ping <to specified url/address>"],
 
     # Ushell (run)
-    "ushell": ["terminal._ushell(args)", "Internal ushell interpreter, run <file.ush> as optional '--bg' for threaded run"],
+    "ushell": ["terminal._ushell(args)", "Internal ushell interpreter, run <file.ush> with optional '--bg' for threaded run"],
 
     # GPIO
     "gpio": ["terminal._gpio(args)", "Gpio configuration for a pin, init/set <specified pin> <mode/value>"],

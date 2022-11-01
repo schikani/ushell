@@ -22,7 +22,7 @@ def submodules_update_and_upload_to_flash():
 
 def rshell_upload_files(submodules):
     os.system("pip3 install rshell")
-    rshell_cmd = f"mkdir /{_board_name_}/lib; mkdir /{_board_name_}/lib/ushell; cp -r ./{_sub_mod_path_}/ushell/*.py /{_board_name_}/lib/ushell; "
+    rshell_cmd = f"mkdir /{_board_name_}/lib; mkdir /{_board_name_}/lib/ushell; cp -r ./ushell/*.py /{_board_name_}/lib/ushell; "
     for mod in submodules:
         rshell_cmd += f"mkdir /{_board_name_}/lib/{mod}; cp -r {_sub_mod_path_}/{mod}/*.py /{_board_name_}/lib/{mod}; "
     rshell_cmd += f"cp ush.py /{_board_name_}; repl ~ from ush import *"

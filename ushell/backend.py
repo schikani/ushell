@@ -13,6 +13,7 @@ from .ram_block_dev import RAMBlockDev
 from .uftpd import start, stop, restart
 from .editor import pye
 from .uping import ping
+from .cal import print_cal
 import time
 import machine
 import gc
@@ -143,6 +144,18 @@ class Users:
             self.username = username
 
         return username, password
+
+    def _set_passwd(self):
+        print("Old Password: ", end="")
+        old_password = sys.stdin.readline().strip("\n")
+        if old_password == self.users.read(self.username):
+            print("\nNew Password: ", end="")
+            new_password = sys.stdin.readline().strip("\n")
+            self.users.write(self.username, new_password)
+            self.users.flush()
+            print("New Password set!")
+        else:
+            print("Incorrect Old Password!")
 
     
     def no_permission(self):
@@ -622,6 +635,9 @@ class Backend(Errors):
         
         year, month, month_day, hour, min, second, weekday, year_day = time.localtime(time.time() + tz_offset)
         self.sys.stdout.write("{} {}  {} {:02d}:{:02d}:{:02d} {}\n".format(wd[weekday], months[month-1], month_day, hour, min, second, year))
+    
+    def calendar(self):
+        print_cal(self._user_data)
 
     
     def echo(self, args):

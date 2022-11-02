@@ -57,4 +57,6 @@
 * <b>ping</b>: Ping to specified url/address
 * <b>ushell</b>: Internal ushell interpreter, run file.ush with optional '--bg' for threaded run
 * <b>gpio</b>: Gpio configuration for a pin, init/set specified pin with mode/value
+* <b>passwd</b>: Set password for current user
+* <b>cal</b>: Get current month calendar
 * <b>help</b>: Help for all the commands

@@ -111,6 +111,12 @@ COMMANDS = {
     # GPIO
     "gpio": ["terminal._gpio(args)", "Gpio configuration for a pin, init/set <specified pin> <mode/value>"],
 
+    # Set user password
+    "passwd": ["terminal._set_passwd()", "Set password for current user"],
+
+    # Calendar
+    "cal": ["terminal.calendar()", "Get current month calendar"],
+
     "help": ["terminal._help(args)", "Help for all the commands"]
 }
 

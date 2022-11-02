@@ -80,6 +80,10 @@ class Logic(Environment):
         if " && " in _inp:  # Multiple commands
             for i in inp.split(" && "):
                 self.tokenizer(i)
+        
+        elif ";" in _inp: # Multiple commands
+            for i in inp.split(";"):
+                self.tokenizer(i)
 
         else:  # single command
             _inp = self.token_str_parser(_inp)

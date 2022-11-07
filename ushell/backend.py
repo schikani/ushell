@@ -10,15 +10,17 @@ __version__ = "2.1.0"
 from jsonDB import jsonDB
 from brain_lang import BrainLang
 from .ram_block_dev import RAMBlockDev
-from .uftpd import start, stop, restart
-from .editor import pye
-from .uping import ping
 from .cal import print_cal
+from ushell_mods.uftpd import start, stop, restart
+from ushell_mods.editor import pye
+from ushell_mods.uping import ping
+import ushell_mods.mpyaes as mpyaes
 import time
-import machine
 import gc
 import sys
 import os
+import machine
+import random
 
 try:
     import network
@@ -34,12 +36,7 @@ USERS_DIR = "/.USERS"
 ROOT_USERNAME = "root"
 ROOT_PASSWORD = "MicroPython"
 
-
-class Users:
-    RAM_BLOCK_DIR_PATH = "/.ramdisk"
-    RAM_BLOCK_SIZE = 512 
-    RAM_BLOCK_NO = 50
-
+class USHELL_DEV:
     def __init__(self):
         self.__version__ = __version__
         # Colors
@@ -62,11 +59,40 @@ class Users:
         self.network = network
         self.ushellDataPath = "/.ushellData"
         self._commands = self.db(self.ushellDataPath, ".commands")
-        self.users = self.db(self.ushellDataPath, ".users")
+        self._aes = self.__init_aes__()
+    
+    def __init_aes__(self):
 
-        if ROOT_USERNAME not in self.users.keys():
-            self.users.write(ROOT_USERNAME, ROOT_PASSWORD)
-            self.users.flush()
+        ushell_dev_db = self.db(self.ushellDataPath, ".ushell_dev")
+        if ushell_dev_db.exists("dev_key"):
+            __dev_key__ = ushell_dev_db.read("dev_key", ev=True)
+        else:
+            seed = random.randrange(1, 10000)
+            __dev_key__ = mpyaes.generate_key(16, seed)
+            ushell_dev_db.write("dev_key", str(__dev_key__))
+            ushell_dev_db.flush()
+
+        return mpyaes.new(__dev_key__, mpyaes.MODE_ECB)
+
+    def welcome_message(self):
+        print("""
+        {}==========================================
+                    WELCOME TO USHELL
+                    Version: {}
+                (c) 2022 Shivang Chikani
+        =========================================={}
+        """.format(self.color[5], self.__version__, self.color[0]))
+
+
+class Users(USHELL_DEV):
+    RAM_BLOCK_DIR_PATH = "/.ramdisk"
+    RAM_BLOCK_SIZE = 512 
+    RAM_BLOCK_NO = 50
+
+    def __init__(self):
+        super().__init__()
+
+        self.users = self.db(self.ushellDataPath, ".users")
 
         self.root_access = False
         self.username = ""
@@ -81,18 +107,11 @@ class Users:
         self.dotUshellDirPath = ""
         self.gpio_dict = dict()
 
-    def welcome_message(self):
-        print("""
-        {}==========================================
-                    WELCOME TO USHELL
-                    Version: {}
-                (c) 2022 Shivang Chikani
-        =========================================={}
-        """.format(self.color[5], self.__version__, self.color[0]))
-
     def username_password(self, username, password, _inplace=True, _print=True):
+
         if ROOT_USERNAME not in self.users.keys():
-            self.users.write(ROOT_USERNAME, ROOT_PASSWORD)
+            self.users.write(ROOT_USERNAME, str(self._aes.encrypt(ROOT_PASSWORD)))
+            self.users.flush()
 
         _pass_count = 2
 
@@ -103,11 +122,12 @@ class Users:
                         print("Enter password for '{}' (tries left {}): ".format(username, _pass_count+1), end="")
                         password = sys.stdin.readline().strip("\n")
 
+                    password = str(self._aes.encrypt(password))
+
                     if password == self.users.read(username):
                         if _print:
                             print("Login successful!")
-                            # time.sleep(0.5)
-
+                                # time.sleep(0.5)
 
                     else:
                         if _print:
@@ -148,9 +168,11 @@ class Users:
     def _set_passwd(self):
         print("Old Password: ", end="")
         old_password = sys.stdin.readline().strip("\n")
+        old_password = str(self._aes.encrypt(old_password))
         if old_password == self.users.read(self.username):
             print("\nNew Password: ", end="")
             new_password = sys.stdin.readline().strip("\n")
+            new_password = str(self._aes.encrypt(new_password))
             self.users.write(self.username, new_password)
             self.users.flush()
             print("New Password set!")
@@ -220,8 +242,6 @@ class Users:
         self._user_data = self.db(self.dotUshellDirPath, ".data")
         self._user_vars[self.username] = dict()
 
-
-
         if self.network:
             self._networks = self.db(self.dotUshellDirPath, ".networks")
         
@@ -236,9 +256,13 @@ class Users:
             username = args[0]
             print("Enter password for new profile" + self.color[2] + " {}".format(username) + self.color[0])
             password = sys.stdin.readline().strip("\n")
+            password = str(self._aes.encrypt(password))
             self.users.write(username, password)
             self.users.flush()
-            os.mkdir(USERS_DIR+"/"+username)
+            try:
+                os.mkdir(USERS_DIR+"/"+username)
+            except:
+                pass
             print("Profile" + self.color[2] + " {} ".format(username) + self.color[0] + "created!")
             self.updateuser(chdir=False, mount_ramdisk=False)
         else:

@@ -1,6 +1,8 @@
 MIT License
 
-ushell - Copyright (c) 2022 Shivang Chikani
+micropython - Copyright (c) 2013-2022 Damien P. George
+
+ushell - Copyright (c) 2021-2022 Shivang Chikani
 
 editor - Copyright (c) 2015 Paul Sokolovsky (initial code)
 	 Copyright (c) 2015-2020 Robert Hammelrath (additional code)

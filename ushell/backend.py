@@ -756,10 +756,11 @@ class Backend(Errors):
     
 
     def _help(self, args):
+        print("\nushell v{}\n".format(self.__version__))
         if args:
             for arg in args:
                 if arg in self._commands.keys():
-                    print("{}".format(self._commands.read(arg)[1]))
+                    print(self.color[3]+"{}".format(arg)+self.color[0]+": "+"{}".format(self._commands.read(arg)[1]))
                 else:
                     print(self.color[4]+"Invalid command '{}'".format(arg)+self.color[0])
         

@@ -42,6 +42,7 @@ class Environment(Backend):
         ssid = args[0]
         print("Enter password for network " + self.color[2] + "{}".format(ssid) + self.color[0])
         password = self.sys.stdin.readline().strip("\n")
+        password = str(self._aes.encrypt(password))
 
         if self.network:
             self._networks.write(ssid, password)
@@ -108,7 +109,7 @@ class Environment(Backend):
                             if netw in dict_B.keys():
                                 found = found.format(netw)
                                 print("found: {}".format(found))
-                                sta_if.connect(netw, dict_B[netw])
+                                sta_if.connect(netw, self._aes.decrypt(eval(dict_B[netw])).decode("utf-8"))
                                 break
                             else:
                                 return self.no_networks_in_database()
@@ -119,7 +120,7 @@ class Environment(Backend):
                         if ssid in dict_B.keys():
                             found = found.format(ssid)
                             print('Connecting to network: {}'.format(found))
-                            sta_if.connect(ssid, dict_B[ssid])
+                            sta_if.connect(ssid, self._aes.decrypt(eval(dict_B[ssid])).decode("utf-8"))
                         else:
                             return self.network_mentioned_not_found(ssid)
                     while not sta_if.isconnected():

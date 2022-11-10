@@ -1,6 +1,6 @@
 [submodule "jsonDB"]
-	path = jsonDB
+	path = submodules/jsonDB
 	url = https://github.com/schikani/jsonDB.git
 [submodule "brain_lang"]
-	path = brain_lang
+	path = submodules/brain_lang
 	url = https://github.com/schikani/brain_lang.git

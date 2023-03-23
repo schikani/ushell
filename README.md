@@ -1,4 +1,4 @@
-# ushell
+# ushell (micro-shell)
 ### ushell is simple yet powerful Bash like terminal with an editor for devices running MicroPython (Tested on esp32 with external spiram)
 
 ## Install ushell

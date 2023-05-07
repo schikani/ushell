@@ -20,7 +20,7 @@ class Environment(Backend):
         if not envPath:
             envPath = self.envPath
         _contents_before = set(self.ls([envPath], helper=True))
-        self.upip.install(package, envPath)
+        self.mip.install(package, envPath)
         _contents_after = set(self.ls([envPath], helper=True))
         _package_files = list(_contents_before.symmetric_difference(_contents_after))
 
@@ -42,7 +42,7 @@ class Environment(Backend):
         ssid = args[0]
         print("Enter password for network " + self.color[2] + "{}".format(ssid) + self.color[0])
         password = self.sys.stdin.readline().strip("\n")
-        password = str(self._aes.encrypt(password))
+        password = str(self._aes.encrypt(password.encode()))
 
         if self.network:
             self._networks.write(ssid, password)
@@ -173,9 +173,9 @@ class Environment(Backend):
         elif args[0] == 'deactivate':
             self.envPath = self.baseEnvPath
 
-    def upip_manager(self, args):
+    def mip_manager(self, args):
 
-        if self.upip:
+        if self.mip:
             ramdisk = True if args[-1] == "--ramdisk" else False
             if ramdisk:
                 self.envPath = self.RAM_BLOCK_DIR_PATH+"/lib"
@@ -223,7 +223,7 @@ class Environment(Backend):
                                 pkg = fr.readline().strip("\n")
                                 if not pkg:
                                     break
-                                self.upip_manager(["uninstall", pkg])
+                                self.mip_manager(["uninstall", pkg])
                     else:
 
                         try:
@@ -252,4 +252,6 @@ class Environment(Backend):
             venv.flush()
 
         else:
-            return self.non_network_platform()
+            print("mip not installed in system!")
+            return None
+            # return self.non_network_platform()

@@ -67,8 +67,8 @@ COMMANDS = {
 
     "ls": ["[print(x, end='  ') for x in terminal.ls(args)];print()", "List current dir or <specified dir>"],
 
-    # upip
-    "upip": ["terminal.upip_manager(args)", "<install/uninstall> <package> with optional dir as '--ramdisk'"],
+    # mip
+    "mip": ["terminal.mip_manager(args)", "<install/uninstall> <package> with optional dir as '--ramdisk'"],
 
     # Micropython-Editor
     "write": ["terminal.editor(args)", "Write <to a file>"],

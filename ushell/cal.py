@@ -6,9 +6,9 @@ wd = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
 
 def get_1st_day(date, day):
     for i in reversed(range(date)):
-        day -= 1
         if day == -1:
             day = 6
+        day -= 1
     
     day += 1
     

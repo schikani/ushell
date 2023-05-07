@@ -5,7 +5,7 @@
 # Project:   ushell
 # ==========================================
 
-__version__ = "2.1.1"
+__version__ = "2.1.2"
 
 from jsonDB import jsonDB
 from brain_lang import BrainLang
@@ -28,9 +28,9 @@ except ImportError:
     network = None
 
 try:
-    import upip
+    import mip
 except ImportError:
-    upip = None
+    mip = None
 
 USERS_DIR = "/.USERS"
 ROOT_USERNAME = "root"
@@ -79,7 +79,7 @@ class USHELL_DEV:
         {}==========================================
                     WELCOME TO USHELL
                     Version: {}
-                (c) 2022 Shivang Chikani
+                (c) 2023 Shivang Chikani
         =========================================={}
         """.format(self.color[5], self.__version__, self.color[0]))
 
@@ -110,7 +110,7 @@ class Users(USHELL_DEV):
     def username_password(self, username, password, _inplace=True, _print=True):
 
         if ROOT_USERNAME not in self.users.keys():
-            self.users.write(ROOT_USERNAME, str(self._aes.encrypt(ROOT_PASSWORD)))
+            self.users.write(ROOT_USERNAME, str(self._aes.encrypt(ROOT_PASSWORD.encode())))
             self.users.flush()
 
         _pass_count = 2
@@ -122,7 +122,7 @@ class Users(USHELL_DEV):
                         print("Enter password for '{}' (tries left {}): ".format(username, _pass_count+1), end="")
                         password = sys.stdin.readline().strip("\n")
 
-                    password = str(self._aes.encrypt(password))
+                    password = str(self._aes.encrypt(password.encode()))
 
                     if password == self.users.read(username):
                         if _print:
@@ -168,11 +168,11 @@ class Users(USHELL_DEV):
     def _set_passwd(self):
         print("Old Password: ", end="")
         old_password = sys.stdin.readline().strip("\n")
-        old_password = str(self._aes.encrypt(old_password))
+        old_password = str(self._aes.encrypt(old_password.encode()))
         if old_password == self.users.read(self.username):
             print("\nNew Password: ", end="")
             new_password = sys.stdin.readline().strip("\n")
-            new_password = str(self._aes.encrypt(new_password))
+            new_password = str(self._aes.encrypt(new_password.encode()))
             self.users.write(self.username, new_password)
             self.users.flush()
             print("New Password set!")
@@ -256,7 +256,7 @@ class Users(USHELL_DEV):
             username = args[0]
             print("Enter password for new profile" + self.color[2] + " {}".format(username) + self.color[0])
             password = sys.stdin.readline().strip("\n")
-            password = str(self._aes.encrypt(password))
+            password = str(self._aes.encrypt(password.encode()))
             self.users.write(username, password)
             self.users.flush()
             try:
@@ -344,7 +344,7 @@ class Initialize(Users):
         self.sys = sys
         self.os = os
         self.pye = pye
-        self.upip = upip
+        self.mip = mip
 
         if not self._commands.exists("__ushell__"):
             import ushell.install
